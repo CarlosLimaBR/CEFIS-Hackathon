@@ -621,14 +621,16 @@ function app() {
 
     passo: 1,
     perfil: { name: '', areas: [], goal: '', level: '', minutes: 60 },
+    // Areas inferidas do catalogo real da CEFIS (476 cursos analisados):
+    // ids 1-7 correspondem ao parametro 'categories' aceito pela API CEFIS
     areas: [
-      { id: 1, nome: 'Contabilidade' },
-      { id: 2, nome: 'Direito' },
-      { id: 3, nome: 'Financas' },
-      { id: 4, nome: 'Gestao' },
-      { id: 5, nome: 'RH' },
-      { id: 6, nome: 'Marketing' },
-      { id: 7, nome: 'Tecnologia' }
+      { id: 1, nome: 'Fiscal & Tributario' },
+      { id: 2, nome: 'Contabil' },
+      { id: 3, nome: 'Trabalhista & RH' },
+      { id: 4, nome: 'Gestao & Negocios' },
+      { id: 5, nome: 'Processos & Estrategia' },
+      { id: 6, nome: 'Desenvolvimento Pessoal' },
+      { id: 7, nome: 'Tecnologia & IA' }
     ],
     carregando: false,
     erro: '',

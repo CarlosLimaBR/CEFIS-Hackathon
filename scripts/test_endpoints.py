@@ -62,7 +62,8 @@ async def t_onboarding() -> dict | None:
     }
     print(f"     payload: {payload}")
     t0 = time.monotonic()
-    async with httpx.AsyncClient(timeout=120.0) as c:
+    timeout = httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as c:
         try:
             r = await c.post(f"{BASE}/api/onboarding", json=payload)
         except httpx.HTTPError as e:

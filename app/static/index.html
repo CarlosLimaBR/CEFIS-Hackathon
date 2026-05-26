@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/static/simbolo-solo-cefis.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Renderizacao de markdown rico nos resumos da IA -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <!-- Renderizacao de diagramas Mermaid nos resumos -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
   <script>
     // Aplica modo escuro o mais cedo possivel para evitar "flash" branco
     try {
@@ -35,6 +39,21 @@
     /* Dark mode: invertes selecionados que nao podem ser feitos so via dark: do tailwind */
     html.dark body { background: #0f172a; color: #e2e8f0; }
     html.dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
+    /* Markdown rico nos resumos */
+    .prose-cefis h2 { font-size: 1rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .prose-cefis h2:first-child { margin-top: 0; }
+    .prose-cefis h3 { font-size: 0.95rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.4rem; }
+    .prose-cefis p { margin: 0.5rem 0; }
+    .prose-cefis ul, .prose-cefis ol { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .prose-cefis ul { list-style: disc; }
+    .prose-cefis ol { list-style: decimal; }
+    .prose-cefis li { margin: 0.2rem 0; }
+    .prose-cefis strong { font-weight: 700; }
+    .prose-cefis code { background: rgba(139, 92, 246, 0.15); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; font-family: 'Consolas', monospace; }
+    html.dark .prose-cefis code { background: rgba(139, 92, 246, 0.3); }
+    .prose-cefis .mermaid { background: white; border-radius: 0.5rem; padding: 0.5rem; margin: 0.75rem 0; display: flex; justify-content: center; }
+    html.dark .prose-cefis .mermaid { background: #1e293b; }
+    .prose-cefis blockquote { border-left: 3px solid #a78bfa; padding-left: 0.75rem; margin: 0.5rem 0; font-style: italic; opacity: 0.9; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased" x-data="app()" x-init="init()" x-cloak>
@@ -463,21 +482,28 @@
                 <p x-show="item.teacher" class="text-xs text-slate-500 mt-0.5" x-text="item.teacher"></p>
                 <p class="text-xs text-slate-600 mt-2 italic">💡 <span x-text="item.reason"></span></p>
 
-                <!-- Resumo IA: texto + botao audio + aulas relacionadas -->
+                <!-- Resumo IA: markdown renderizado + Mermaid + audio + aulas relacionadas -->
                 <template x-if="item.type === 'resumo' && item.summary_content">
                   <div class="mt-3">
-                    <div class="p-3 bg-purple-50 text-xs text-purple-900 rounded leading-relaxed flex items-start gap-2">
-                      <button @click="ouvir('item-'+i, item.summary_content)" :title="audioKey === 'item-'+i ? 'Parar' : 'Ouvir'" class="text-purple-700 hover:text-purple-900 mt-0.5">
-                        <span x-show="audioKey !== 'item-'+i">🔊</span>
-                        <span x-show="audioKey === 'item-'+i">⏸️</span>
-                      </button>
-                      <span x-text="item.summary_content"></span>
+                    <div class="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border border-purple-100 dark:border-purple-800 rounded-lg">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">📝 Resumo gerado pela IA</span>
+                        <button @click="ouvir('item-'+i, item.summary_content)" :title="audioKey === 'item-'+i ? 'Parar' : 'Ouvir resumo'" class="text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100">
+                          <span x-show="audioKey !== 'item-'+i">🔊</span>
+                          <span x-show="audioKey === 'item-'+i">⏸️</span>
+                        </button>
+                      </div>
+                      <div
+                        class="prose-cefis text-sm text-purple-900 dark:text-purple-50 leading-relaxed"
+                        x-html="renderMarkdown(item.summary_content)"
+                        x-init="$nextTick(() => initMermaidNo($el))"
+                      ></div>
                     </div>
                     <div x-show="(item.related_lessons || []).length" class="mt-2 pl-1">
-                      <p class="text-xs text-slate-500 mb-1">📎 Para se aprofundar:</p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">📎 Para se aprofundar:</p>
                       <template x-for="rl in (item.related_lessons || [])" :key="rl.lesson_id">
-                        <a :href="rl.course_url" target="_blank" class="block text-xs text-blue-700 hover:underline">
-                          • <span x-text="rl.course_title"></span> — <span class="text-slate-600" x-text="rl.lesson_title"></span>
+                        <a :href="rl.course_url" target="_blank" class="block text-xs text-blue-700 dark:text-blue-300 hover:underline">
+                          • <span x-text="rl.course_title"></span> — <span class="text-slate-600 dark:text-slate-400" x-text="rl.lesson_title"></span>
                         </a>
                       </template>
                     </div>
@@ -560,6 +586,56 @@
   </div>
 </div>
 
+<!-- ================== MODAL "SESSAO CONCLUIDA" ================== -->
+<div x-show="mostrarConclusaoSessao" @keydown.escape.window="mostrarConclusaoSessao=false" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 px-6 py-8 text-center text-white">
+      <div class="text-6xl mb-2">🎉</div>
+      <h2 class="text-2xl font-bold">Parabens, <span x-text="perfil.name || 'aluno'"></span>!</h2>
+      <p class="text-green-50 mt-1 text-sm">Voce concluiu todos os <strong x-text="plano.length"></strong> itens da Fase <strong x-text="faseAtual"></strong></p>
+      <div class="mt-3 inline-block bg-white/20 backdrop-blur rounded-full px-4 py-1 text-xs">
+        ⏱ <span x-text="formatMin(duracaoTotal())"></span> de estudo
+        · 📚 <span x-text="historico.lessons_concluidas?.length || 0"></span> aulas no total
+      </div>
+    </div>
+
+    <div class="px-6 py-5">
+      <p class="text-sm text-slate-700 dark:text-slate-200 text-center mb-5">O que voce quer fazer agora?</p>
+
+      <div class="grid grid-cols-1 gap-3">
+        <!-- Praticar (roleplay) -->
+        <button @click="mostrarConclusaoSessao=false; abrirRoleplay()" class="group bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white rounded-xl p-4 text-left transition shadow-md">
+          <div class="flex items-start gap-3">
+            <div class="text-3xl">🎭</div>
+            <div class="flex-1">
+              <div class="font-bold">Praticar com o tutor</div>
+              <p class="text-xs text-purple-100 mt-1">Treine o que aprendeu em cenarios reais (apresentar pro CFO, defender em auditoria...). Pode usar voz!</p>
+            </div>
+            <span class="text-2xl opacity-50 group-hover:opacity-100 transition">→</span>
+          </div>
+        </button>
+
+        <!-- Nova sessao -->
+        <button @click="mostrarConclusaoSessao=false; abrirNovaSessao()" class="group bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl p-4 text-left transition shadow-md">
+          <div class="flex items-start gap-3">
+            <div class="text-3xl">+</div>
+            <div class="flex-1">
+              <div class="font-bold">Iniciar nova sessao</div>
+              <p class="text-xs text-amber-100 mt-1">Aprofundar o mesmo objetivo ou estudar outro tema. Diz quanto tempo voce tem agora.</p>
+            </div>
+            <span class="text-2xl opacity-50 group-hover:opacity-100 transition">→</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between text-xs">
+        <button @click="mostrarConclusaoSessao=false; abrirProgresso()" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">📊 Ver progresso</button>
+        <button @click="mostrarConclusaoSessao=false" class="text-slate-400 dark:text-slate-500 hover:text-slate-700">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================== MODAL "PRATIQUE COM O TUTOR" (ROLEPLAY) ================== -->
 <div x-show="mostrarRoleplay" @keydown.escape.window="fecharRoleplay()" class="fixed inset-0 bg-black/60 flex items-start justify-center p-4 z-50 overflow-y-auto">
   <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-8 max-h-[90vh] flex flex-col">
@@ -620,7 +696,20 @@
         </div>
 
         <form @submit.prevent="enviarRoleplay(false)" class="border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex gap-2">
-          <input x-model="roleplayInput" type="text" placeholder="Responda ao personagem..." :disabled="roleplayDigitando" class="flex-1 text-sm rounded-lg border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100">
+          <input x-model="roleplayInput" type="text" placeholder="Responda ao personagem (ou use o microfone)..." :disabled="roleplayDigitando" class="flex-1 text-sm rounded-lg border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100">
+          <button
+            type="button"
+            @click="iniciarVozRoleplay()"
+            :title="vozReconhecendoRoleplay ? 'Parar microfone' : 'Falar com o personagem'"
+            :disabled="roleplayDigitando"
+            :class="vozReconhecendoRoleplay ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'"
+            class="px-3 rounded-lg transition flex items-center justify-center"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0M12 18v3M8 21h8" />
+              <rect x="9" y="3" width="6" height="12" rx="3" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button type="submit" :disabled="!roleplayInput.trim() || roleplayDigitando" :class="(roleplayInput.trim() && !roleplayDigitando) ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 text-slate-400'" class="px-4 rounded-lg font-medium transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
           </button>
@@ -1086,9 +1175,13 @@ function app() {
 
     // Voz (Web Speech API)
     vozSuportada: false,
-    vozReconhecendo: false,
-    vozRec: null,            // SpeechRecognition instance
-    vozAutoFalar: false,     // true = ao receber resposta do tutor, fala automaticamente
+    vozReconhecendo: false,    // chat
+    vozRec: null,              // SpeechRecognition instance (compartilhado)
+    vozAutoFalar: false,       // true = ao receber resposta do chat, fala automaticamente
+
+    // Voz no roleplay
+    vozReconhecendoRoleplay: false,
+    vozAutoFalarRoleplay: false,
 
     // Selecao de cursos (tela entre onboarding e plano)
     cursosCandidatos: [],       // [{ id, title, summary, duration_minutes, ... }]
@@ -1105,6 +1198,10 @@ function app() {
 
     // Tela de progresso (dashboard da trilha)
     mostrarProgresso: false,
+
+    // Modal automatico ao concluir todos os itens da sessao
+    mostrarConclusaoSessao: false,
+    sessaoConcluidaUmaVez: false,
 
     // Roleplay
     mostrarRoleplay: false,
@@ -1177,6 +1274,15 @@ function app() {
       });
       // aplica estado inicial do dark mode na <html>
       document.documentElement.classList.toggle('dark', this.darkMode);
+
+      // Detecta quando o aluno conclui todos os itens da sessao
+      this.$watch('plano', () => {
+        if (this.plano.length > 0 && this.plano.every(p => p.concluido) && !this.sessaoConcluidaUmaVez) {
+          this.sessaoConcluidaUmaVez = true;
+          // pequeno delay para o aluno ver o ultimo checkbox marcado antes do modal
+          setTimeout(() => { this.mostrarConclusaoSessao = true; }, 500);
+        }
+      }, { deep: true });
 
       await Promise.all([this.checkStatus(), this.checkMe()]);
       this.statusTimer = setInterval(() => this.checkStatus(), 5000);
@@ -1432,6 +1538,7 @@ function app() {
         this.catalogGap = !!data.catalog_gap;
         this.plano = (data.plan || []).map(it => ({ ...it, concluido: false }));
         this.faseAtual = data.phase || phase;
+        this.sessaoConcluidaUmaVez = false;  // libera o modal de conclusao para a nova sessao
 
         // registra plano gerado no historico
         (this.historico.planos = this.historico.planos || []).push({
@@ -1978,6 +2085,11 @@ function app() {
         this.roleplayConversa[idx].content = '[erro: ' + e.message + ']';
       } finally {
         this.roleplayDigitando = false;
+        // Se o aluno mandou por voz, fala a resposta do personagem
+        if (this.vozAutoFalarRoleplay && this.roleplayConversa[idx]?.content?.length > 5) {
+          this.vozAutoFalarRoleplay = false;
+          setTimeout(() => this.ouvir('roleplay-' + idx, this.roleplayConversa[idx].content), 300);
+        }
       }
     },
     async pedirFeedbackRoleplay() {
@@ -2035,6 +2147,78 @@ function app() {
       };
       this.vozRec = rec;
       try { rec.start(); } catch (e) { console.warn('[voz] start', e); }
+    },
+
+    iniciarVozRoleplay() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert('Seu navegador nao suporta reconhecimento de voz. Use Chrome ou Edge.');
+        return;
+      }
+      if (this.vozReconhecendoRoleplay && this.vozRec) {
+        try { this.vozRec.stop(); } catch (e) {}
+        return;
+      }
+      const rec = new SR();
+      rec.lang = 'pt-BR';
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onstart = () => { this.vozReconhecendoRoleplay = true; };
+      rec.onerror = (e) => {
+        console.warn('[voz roleplay] erro', e.error);
+        this.vozReconhecendoRoleplay = false;
+      };
+      rec.onend = () => { this.vozReconhecendoRoleplay = false; };
+      rec.onresult = (e) => {
+        const texto = e.results[0][0].transcript;
+        if (texto && texto.trim()) {
+          this.roleplayInput = texto.trim();
+          this.vozAutoFalarRoleplay = true;
+          setTimeout(() => this.enviarRoleplay(false), 200);
+        }
+      };
+      this.vozRec = rec;
+      try { rec.start(); } catch (e) { console.warn('[voz roleplay] start', e); }
+    },
+
+    // ============== MARKDOWN + MERMAID ==============
+    // Renderiza markdown para HTML, com blocos ```mermaid``` virando divs renderizaveis
+    renderMarkdown(text) {
+      if (!text || typeof text !== 'string') return '';
+      if (!window.marked) return text.replace(/</g, '&lt;');
+      let html = window.marked.parse(text, { breaks: true, gfm: true });
+      // Substitui <pre><code class="language-mermaid">...</code></pre> por <div class="mermaid">...</div>
+      html = html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g, (_, code) => {
+        const decoded = code
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&#39;/g, "'")
+          .replace(/&quot;/g, '"');
+        return `<div class="mermaid">${decoded}</div>`;
+      });
+      return html;
+    },
+
+    // Hook chamado quando o card aparece — dispara mermaid.run() nos novos diagramas
+    initMermaidNo(el) {
+      if (!window.mermaid || !el) return;
+      try {
+        if (!window._mermaidInited) {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: this.darkMode ? 'dark' : 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          });
+          window._mermaidInited = true;
+        }
+        const nodes = Array.from(el.querySelectorAll('.mermaid:not([data-processed])'));
+        if (nodes.length) {
+          window.mermaid.run({ nodes }).catch(e => console.warn('[mermaid]', e));
+        }
+      } catch (e) { console.warn('[mermaid init]', e); }
     },
 
     // slugify identico ao do backend - para gerar URL da aula no quiz

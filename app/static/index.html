@@ -1034,86 +1034,124 @@ function app() {
     async enviarPergunta() {
       const q = this.perguntaChat.trim();
       if (!q || this.chatDigitando) return;
+
+      console.log('[chat] enviando:', q);
       this.conversas.push({ tipo: 'aluno', texto: q });
       this.perguntaChat = '';
       this.chatDigitando = true;
       this.scrollChat();
 
-      const history = this.conversas.filter(c => c.texto).map(c => ({
-        role: c.tipo === 'aluno' ? 'user' : 'assistant',
-        content: c.texto
-      }));
+      // historico para o LLM (tudo menos a ultima mensagem, que e a pergunta atual)
+      const history = this.conversas
+        .filter(c => c.texto && c.texto.length > 0)
+        .slice(0, -1)
+        .map(c => ({
+          role: c.tipo === 'aluno' ? 'user' : 'assistant',
+          content: c.texto,
+        }));
 
-      // SSE via fetch streaming
-      let resp;
-      try {
-        resp = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: q, history: history.slice(0, -1) })
-        });
-      } catch (e) {
-        this.conversas.push({ tipo: 'tutor', texto: 'Erro de rede: ' + e.message });
-        this.chatDigitando = false;
-        return;
-      }
-
-      if (!resp.ok) {
-        let detail = '';
-        try { detail = JSON.stringify(await resp.json()); } catch (e) { detail = await resp.text().catch(() => ''); }
-        this.conversas.push({ tipo: 'tutor', texto: `Erro ${resp.status}: ${detail.slice(0, 300)}` });
-        this.chatDigitando = false;
-        console.error('[chat]', resp.status, detail);
-        return;
-      }
-      if (!resp.body) {
-        this.conversas.push({ tipo: 'tutor', texto: 'Servidor nao retornou stream.' });
-        this.chatDigitando = false;
-        return;
-      }
-
+      // bolha vazia do tutor — vai sendo preenchida pelo stream
       const tutorMsg = { tipo: 'tutor', texto: '', fontes: [] };
       this.conversas.push(tutorMsg);
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+      // timeout total: 60s. Aborta o fetch se passar disso.
+      const abort = new AbortController();
+      const timer = setTimeout(() => {
+        console.warn('[chat] timeout (60s) - abortando');
+        abort.abort();
+      }, 60000);
 
       try {
-        while (true) {
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+          body: JSON.stringify({ message: q, history }),
+          signal: abort.signal,
+        });
+
+        console.log('[chat] resposta', resp.status, resp.headers.get('content-type'));
+
+        if (!resp.ok) {
+          let detail = '';
+          try { detail = JSON.stringify(await resp.json()); }
+          catch (_) { try { detail = await resp.text(); } catch (_) { detail = ''; } }
+          tutorMsg.texto = `Erro ${resp.status}: ${detail.slice(0, 400) || '(sem detalhe)'}`;
+          console.error('[chat] http error', resp.status, detail);
+          return;
+        }
+        if (!resp.body) {
+          tutorMsg.texto = 'Servidor nao retornou stream (resp.body vazio).';
+          console.error('[chat] no body');
+          return;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let primeiroToken = false;
+        let totalTokens = 0;
+        let stop = false;
+
+        while (!stop) {
           const { value, done } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log('[chat] stream finalizado (done)');
+            break;
+          }
           buffer += decoder.decode(value, { stream: true });
+
           let idx;
-          while ((idx = buffer.indexOf('\n\n')) > -1) {
-            const raw = buffer.slice(0, idx);
+          while ((idx = buffer.indexOf('\n\n')) >= 0) {
+            const block = buffer.slice(0, idx);
             buffer = buffer.slice(idx + 2);
-            const ev = parseSSE(raw);
+            const ev = parseSSE(block);
             if (!ev) continue;
+
             if (ev.event === 'sources') {
-              try { tutorMsg.fontes = JSON.parse(ev.data); } catch (e) { console.error('parse sources', e); }
+              try {
+                tutorMsg.fontes = JSON.parse(ev.data) || [];
+                console.log('[chat] fontes:', tutorMsg.fontes.length);
+              } catch (e) { console.error('[chat] parse sources', e, ev.data); }
             } else if (ev.event === 'token') {
               try {
-                tutorMsg.texto += JSON.parse(ev.data).t || '';
-              } catch (e) { console.error('parse token', e); }
-              this.scrollChat();
+                const tok = JSON.parse(ev.data).t || '';
+                if (!primeiroToken) {
+                  primeiroToken = true;
+                  console.log('[chat] primeiro token recebido');
+                }
+                tutorMsg.texto += tok;
+                totalTokens++;
+                this.scrollChat();
+              } catch (e) { console.error('[chat] parse token', e, ev.data); }
             } else if (ev.event === 'error') {
-              try {
-                const errObj = JSON.parse(ev.data);
-                tutorMsg.texto += `\n\n[erro: ${errObj.message || JSON.stringify(errObj)}]`;
-              } catch (e) {
-                tutorMsg.texto += '\n\n[erro de stream]';
-              }
-              console.error('[chat stream error]', ev.data);
+              let msg = '[erro de stream]';
+              try { msg = `[erro: ${JSON.parse(ev.data).message || ev.data}]`; } catch (_) {}
+              tutorMsg.texto += '\n\n' + msg;
+              console.error('[chat] stream error', ev.data);
+            } else if (ev.event === 'done') {
+              console.log('[chat] evento done recebido');
+              stop = true;
+              break;
             }
           }
         }
+
+        if (totalTokens === 0 && !tutorMsg.texto) {
+          tutorMsg.texto = '(Nenhum conteudo recebido. Veja o terminal do servidor para detalhes.)';
+        }
+        console.log('[chat] concluido:', totalTokens, 'tokens,', tutorMsg.texto.length, 'chars');
       } catch (e) {
-        tutorMsg.texto += `\n\n[falha na leitura do stream: ${e.message}]`;
-        console.error('[chat read]', e);
+        if (e.name === 'AbortError') {
+          tutorMsg.texto = '\n\n[timeout - servidor demorou mais de 60s para responder]';
+        } else {
+          tutorMsg.texto += (tutorMsg.texto ? '\n\n' : '') + `[falha: ${e.message}]`;
+        }
+        console.error('[chat] exception', e);
+      } finally {
+        clearTimeout(timer);
+        this.chatDigitando = false;
+        this.scrollChat();
       }
-      this.chatDigitando = false;
-      this.scrollChat();
     },
 
     scrollChat() {

@@ -46,6 +46,9 @@ Bônus arquiteturais:
     <td><b>Modal "Nova sessão"</b><br/>"Tenho X minutos agora" — gera próxima sessão respeitando o tempo atual, pulando o que já foi visto. Pode continuar mesmo objetivo ou trocar de tema.<br/><br/><img src="Docs/screenshots/06-modal-nova-sessao.png" alt="Modal Nova sessão"/></td>
     <td><b>Quiz por aula</b><br/>5 perguntas geradas da transcrição real da aula clicada. Mix de dificuldade, feedback imediato verde/vermelho, explicação justificada no conteúdo.<br/><br/><img src="Docs/screenshots/07-quiz.png" alt="Quiz"/></td>
   </tr>
+  <tr>
+    <td colspan="2"><b>Meu progresso (dashboard da trilha)</b><br/>Cards de stats agregados (aulas vistas, quizzes feitos com % médio, sessões/fases percorridas, tempo total estudado), plano atual com barra de progresso, distribuição por área de interesse, histórico das últimas sessões e quizzes recentes com nota colorida. Tudo lido do <code>localStorage</code> — sem chamada de backend.<br/><br/><img src="Docs/screenshots/08-meu-progresso.png" alt="Meu progresso"/></td>
+  </tr>
 </table>
 
 ---
@@ -63,6 +66,7 @@ Bônus arquiteturais:
 - **Áudio em todo conteúdo gerado** — botão 🔊 no diagnóstico, resumos, chat e quiz.
 - **Trilha evolutiva multi-fase** — ao concluir o plano, botão "Próxima fase" gera o próximo nível excluindo o que já foi visto.
 - **Histórico local cumulativo** — aulas concluídas, quizzes feitos e cursos consumidos ficam no `localStorage` e influenciam os próximos planos automaticamente.
+- **Dashboard "Meu progresso"** — botão 📊 no header mostra stats agregados, plano atual com %, sessões anteriores, quizzes recentes e distribuição por área.
 
 Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estático com Tailwind via CDN e Alpine.js (zero build).
 

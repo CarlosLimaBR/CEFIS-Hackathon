@@ -62,6 +62,27 @@
       100% { opacity: 0; transform: translateX(20px); }
     }
     .animate-toast-in { animation: toast-in 4.5s ease-in-out forwards; }
+    /* Loading dinamico — animacoes contextuais */
+    @keyframes ping-slow {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.15); opacity: 0.2; }
+    }
+    .animate-ping-slow { animation: ping-slow 2.5s ease-in-out infinite; }
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .animate-bounce-slow { animation: bounce-slow 1.4s ease-in-out infinite; }
+    @keyframes dica-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-dica-in { animation: dica-in 0.5s ease-out; }
+    @keyframes icon-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .animate-icon-pulse { animation: icon-pulse 2.2s ease-in-out infinite; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased" x-data="app()" x-init="init()" x-cloak>
@@ -384,31 +405,57 @@
   </div>
 </div>
 
-<!-- ================== LOADING DO PLANO ================== -->
+<!-- ================== LOADING DO PLANO (dinamico) ================== -->
 <div x-show="tela === 'gerando'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-    <div class="text-center mb-8">
-      <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-        <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-      </div>
-      <h2 class="text-2xl font-bold">Montando seu plano</h2>
-      <p class="text-slate-500 mt-1 text-sm">Analisando catalogo + gerando diagnostico...</p>
-    </div>
-    <div class="space-y-3">
-      <template x-for="(e, i) in etapasLoading" :key="i">
-        <div :class="i <= etapaAtual ? 'bg-blue-50' : 'bg-slate-50'" class="flex items-center gap-3 p-3 rounded-lg transition">
-          <div class="text-2xl" x-text="e.icone"></div>
-          <span class="flex-1 text-sm font-medium" :class="i <= etapaAtual ? 'text-blue-900' : 'text-slate-400'" x-text="e.titulo"></span>
-          <div x-show="i < etapaAtual" class="text-green-600">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+  <div class="w-full max-w-lg">
+    <!-- Card principal: etapas + spinner -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-7">
+      <div class="text-center mb-6">
+        <div class="relative inline-block w-20 h-20 mb-4">
+          <div class="absolute inset-0 rounded-full bg-blue-100 dark:bg-blue-900/40 animate-ping-slow"></div>
+          <div class="relative w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+            <svg class="w-10 h-10 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
           </div>
-          <div x-show="i === etapaAtual" class="flex gap-1">
-            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
-            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
-            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+        </div>
+        <h2 class="text-2xl font-bold dark:text-white">Montando seu plano</h2>
+        <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm" x-text="(historico.planos || []).length > 0 ? `Considerando suas ${(historico.planos || []).length} sessoes anteriores...` : 'Analisando catalogo + gerando diagnostico...'"></p>
+      </div>
+      <div class="space-y-2.5">
+        <template x-for="(e, i) in etapasLoading" :key="e.titulo">
+          <div :class="i < etapaAtual ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800' : i === etapaAtual ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' : 'bg-slate-50 dark:bg-slate-700/40 border border-transparent'" class="flex items-center gap-3 p-3 rounded-lg transition-all">
+            <div class="text-xl" :class="i === etapaAtual && 'animate-bounce-slow'" x-text="e.icone"></div>
+            <span class="flex-1 text-sm font-medium" :class="i < etapaAtual ? 'text-green-900 dark:text-green-200' : i === etapaAtual ? 'text-blue-900 dark:text-blue-100' : 'text-slate-400 dark:text-slate-500'" x-text="e.titulo"></span>
+            <div x-show="i < etapaAtual" class="text-green-600 dark:text-green-400">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            </div>
+            <div x-show="i === etapaAtual" class="flex gap-1">
+              <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Card de dica rotativa -->
+    <div class="mt-4 bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-5 text-white relative overflow-hidden min-h-[110px]">
+      <template x-for="(d, i) in dicas" :key="i">
+        <div x-show="i === dicaIdx" class="flex items-start gap-3 animate-dica-in">
+          <div class="text-3xl flex-shrink-0 animate-icon-pulse" x-text="d.icone"></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-1">💡 voce sabia?</p>
+            <p class="text-sm font-bold mb-0.5" x-text="d.titulo"></p>
+            <p class="text-xs text-blue-100 leading-relaxed" x-text="d.texto"></p>
           </div>
         </div>
       </template>
+      <!-- Indicador de dicas (dots) -->
+      <div class="absolute bottom-2 right-3 flex gap-1">
+        <template x-for="(d, i) in dicas" :key="i">
+          <div :class="i === dicaIdx ? 'bg-white w-3' : 'bg-white/30 w-1'" class="h-1 rounded-full transition-all"></div>
+        </template>
+      </div>
     </div>
   </div>
 </div>
@@ -1243,12 +1290,39 @@ function app() {
     erro: '',
 
     etapaAtual: 0,
-    etapasLoading: [
+    etapasLoading: [],          // sorteado a cada geracao (mantemos 4 fixas)
+    todasEtapas: [
       { titulo: 'Analisando seu objetivo', icone: '🎯' },
-      { titulo: 'Buscando cursos no catalogo CEFIS', icone: '📚' },
+      { titulo: 'Buscando no catalogo CEFIS', icone: '📚' },
       { titulo: 'Identificando lacunas de conhecimento', icone: '🔍' },
-      { titulo: 'Montando seu plano personalizado', icone: '✨' }
+      { titulo: 'Considerando o que voce ja dominou', icone: '🎓' },
+      { titulo: 'Cruzando com 34 mil transcricoes indexadas', icone: '🧠' },
+      { titulo: 'Filtrando aulas que voce ainda nao viu', icone: '🛤️' },
+      { titulo: 'Ajustando ao tempo que voce tem agora', icone: '⏱️' },
+      { titulo: 'Pesando dificuldade e nivel atual', icone: '📊' },
+      { titulo: 'Pinçando exemplos praticos da area', icone: '💡' },
+      { titulo: 'Otimizando o caminho mais curto', icone: '⚡' },
+      { titulo: 'Selecionando aulas mais relevantes', icone: '🎬' },
+      { titulo: 'Conectando aulas com seu objetivo real', icone: '🧩' },
     ],
+
+    // Dicas das features que rotacionam durante o loading
+    dicas: [
+      { icone: '🎤', titulo: 'Voz hands-free', texto: 'Use o microfone no chat para conversar com o tutor. A resposta volta em audio.' },
+      { icone: '🔊', titulo: 'Audio em todo conteudo', texto: 'Toque o icone de audio em qualquer texto da IA — diagnostico, resumo, chat ou explicacao de quiz.' },
+      { icone: '🎭', titulo: 'Pratique com o tutor', texto: 'O modo Roleplay simula situacoes reais: apresentar pro CFO, defender em auditoria, negociar com cliente.' },
+      { icone: '❓', titulo: 'Quiz dinamico', texto: 'Clique em "Testar" em qualquer aula. 5 perguntas geradas em runtime da transcricao real, com explicacao justificada.' },
+      { icone: '📎', titulo: 'Chat que cita a aula', texto: 'Toda resposta do chat aponta curso, aula e segundo exato onde aquilo e dito na transcricao real.' },
+      { icone: '🎓', titulo: 'Trajetoria de Mestria', texto: 'Conceitos dominados = aula concluida + quiz acima de 80%. Acompanhe em Progresso.' },
+      { icone: '🛤️', titulo: 'Trilhas oficiais CEFIS', texto: 'Em vez de comecar do zero, voce pode adotar uma trilha curada pela CEFIS — 20 disponiveis.' },
+      { icone: '➕', titulo: 'Nova sessao recorrente', texto: 'Voltou com 15 min livres? Clique em "+ Nova sessao". O tutor monta algo curto pulando o que voce ja viu.' },
+      { icone: '📊', titulo: 'Meu progresso', texto: 'Veja conceitos dominados, retencao, melhor horario para estudar e historico das suas sessoes.' },
+      { icone: '🌙', titulo: 'Modo escuro', texto: 'Toggle no canto direito do header. Preferencia salva — fica como voce deixou.' },
+      { icone: '👤', titulo: 'Login CEFIS opcional', texto: 'Entre com sua conta CEFIS para puxar certificados ja conquistados — nao recomendamos o que voce ja fez.' },
+      { icone: '📝', titulo: 'Resumos com diagramas', texto: 'Resumos da IA vem com markdown rico, listas e diagramas Mermaid quando o conceito e sequencial.' },
+    ],
+    dicaIdx: 0,
+    dicaTimer: null,
 
     diagnostico: '',
     catalogGap: false,
@@ -1605,6 +1679,49 @@ function app() {
       }
     },
 
+    // Sorteia 4 etapas para o loading do plano, garantindo:
+    // - 1a fixa: "Analisando seu objetivo"
+    // - 4a fixa: "Montando seu plano personalizado"
+    // - 2 do meio sorteadas, priorizando etapas contextuais ao historico
+    sortearEtapasLoading() {
+      const fixaInicial = { titulo: 'Analisando seu objetivo', icone: '🎯' };
+      const fixaFinal = { titulo: 'Montando seu plano personalizado', icone: '✨' };
+      const temHistorico = (this.historico.lessons_concluidas || []).length > 0;
+      const temDominio = (this.historico.conceitos_dominados || []).length > 0;
+
+      // Filtra etapas contextuais
+      const pool = this.todasEtapas.filter(e => {
+        if (e.titulo === fixaInicial.titulo) return false;
+        if (e.titulo === fixaFinal.titulo) return false;
+        if (e.titulo.includes('ja dominou') && !temDominio) return false;
+        if (e.titulo.includes('ainda nao viu') && !temHistorico) return false;
+        return true;
+      });
+
+      // Sorteia 2 do meio
+      const meio = [];
+      const usado = new Set();
+      while (meio.length < 2 && usado.size < pool.length) {
+        const i = Math.floor(Math.random() * pool.length);
+        if (!usado.has(i)) { usado.add(i); meio.push(pool[i]); }
+      }
+
+      this.etapasLoading = [fixaInicial, ...meio, fixaFinal];
+    },
+
+    // Rotaciona dicas a cada N segundos
+    iniciarRotacaoDicas() {
+      this.dicaIdx = Math.floor(Math.random() * this.dicas.length);
+      if (this.dicaTimer) clearInterval(this.dicaTimer);
+      this.dicaTimer = setInterval(() => {
+        this.dicaIdx = (this.dicaIdx + 1) % this.dicas.length;
+      }, 4500);
+    },
+
+    pararRotacaoDicas() {
+      if (this.dicaTimer) { clearInterval(this.dicaTimer); this.dicaTimer = null; }
+    },
+
     // Gera o plano usando os cursos selecionados (ou todos se nada marcado)
     async gerarPlano(nextPhase = false) {
       if (!nextPhase && this.cursosSelecionados.length === 0) {
@@ -1615,6 +1732,8 @@ function app() {
       this.erro = '';
       this.tela = 'gerando';
       this.etapaAtual = 0;
+      this.sortearEtapasLoading();
+      this.iniciarRotacaoDicas();
       const tick = setInterval(() => {
         if (this.etapaAtual < this.etapasLoading.length - 1) this.etapaAtual++;
       }, 2500);
@@ -1687,6 +1806,7 @@ function app() {
         this.tela = nextPhase ? 'plano' : 'selecao_cursos';
       } finally {
         this.carregando = false;
+        this.pararRotacaoDicas();
       }
     },
 

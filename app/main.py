@@ -79,6 +79,11 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=120)
 
 
+class TTSRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=4000)
+    voice: str = Field(default="alloy", pattern="^(alloy|echo|fable|onyx|nova|shimmer)$")
+
+
 # ---------------------------------------------------------------------------
 # Rotas
 # ---------------------------------------------------------------------------
@@ -274,22 +279,45 @@ async def onboarding(
         ]
     )
 
-    # 5) Enriquece itens do plano com URL real + metadata do curso
+    # 5) Enriquece itens do plano com URL real + aulas relacionadas
     items_out = []
     by_lesson = {l["id"]: l for l in lessons}
     for it in plan.get("items", []):
         lesson = by_lesson.get(it.get("lesson_id"))
-        items_out.append(
-            {
-                **it,
-                "course_url": (
-                    course_url(lesson["course_id"], lesson["course_title"])
-                    if lesson else None
-                ),
-                "course_title": lesson["course_title"] if lesson else None,
-                "teacher": lesson["teacher_name"] if lesson else None,
-            }
-        )
+        enriched = {
+            **it,
+            "course_url": (
+                course_url(lesson["course_id"], lesson["course_title"])
+                if lesson else None
+            ),
+            "course_title": lesson["course_title"] if lesson else None,
+            "teacher": lesson["teacher_name"] if lesson else None,
+        }
+
+        # Conteudo gerado pela IA (resumo/quiz) ganha referencia para aulas
+        # reais relacionadas, para o aluno aprofundar.
+        if it.get("type") in ("resumo", "quiz") and not lesson:
+            query_text = (it.get("title") or "") + " " + (it.get("summary_content") or "")
+            query_text = query_text.strip()
+            if query_text:
+                try:
+                    emb = llm.embed(query_text)
+                    related = db.lessons_by_embedding(emb, limit=2)
+                    enriched["related_lessons"] = [
+                        {
+                            "lesson_id": r["lesson_id"],
+                            "lesson_title": r["lesson_title"],
+                            "course_id": r["course_id"],
+                            "course_title": r["course_title"],
+                            "teacher": r.get("teacher_name"),
+                            "course_url": course_url(r["course_id"], r["course_title"]),
+                        }
+                        for r in related
+                    ]
+                except Exception as e:
+                    print(f"[related_lessons error] {e}")
+
+        items_out.append(enriched)
 
     return {
         "diagnosis": diagnosis.get("diagnosis"),
@@ -297,6 +325,24 @@ async def onboarding(
         "topics": diagnosis.get("topics", []),
         "plan": items_out,
     }
+
+
+@app.post("/api/tts")
+async def tts(req: TTSRequest) -> StreamingResponse:
+    """Converte texto em MP3 (streaming) via OpenAI TTS."""
+    def audio_iter():
+        try:
+            yield from llm.tts_stream(req.text, voice=req.voice)
+        except Exception as e:
+            # se algo falhar no meio, encerra silenciosamente
+            print(f"[tts error] {type(e).__name__}: {e}")
+            return
+
+    return StreamingResponse(
+        audio_iter(),
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.post("/api/quiz/{lesson_id}")

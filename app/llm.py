@@ -54,3 +54,17 @@ def chat_stream(messages: list[dict], temperature: float = 0.5) -> Iterator[str]
         delta = chunk.choices[0].delta.content
         if delta:
             yield delta
+
+
+def tts_stream(text: str, voice: str = "alloy") -> Iterator[bytes]:
+    """Streaming de MP3 via OpenAI TTS. Vozes: alloy, echo, fable, onyx, nova, shimmer."""
+    model = os.environ.get("OPENAI_TTS_MODEL", "tts-1")
+    # API streaming nova - chega em chunks conforme o servidor gera
+    with client().audio.speech.with_streaming_response.create(
+        model=model,
+        voice=voice,
+        input=text[:4000],
+        response_format="mp3",
+    ) as response:
+        for chunk in response.iter_bytes(chunk_size=8192):
+            yield chunk

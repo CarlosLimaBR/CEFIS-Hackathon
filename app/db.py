@@ -133,6 +133,35 @@ def lessons_for_courses(course_ids: list[int]) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
+def lessons_by_embedding(query_embedding: list[float], limit: int = 3) -> list[dict]:
+    """Top-K aulas por similaridade — agrupa chunks pela aula com menor distancia media.
+
+    Usado para sugerir 'se aprofunde nesta aula' apos um resumo gerado pela IA.
+    """
+    blob = serialize_vec(query_embedding)
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.id AS lesson_id, l.title AS lesson_title,
+                   c.id AS course_id, c.title AS course_title,
+                   c.teacher_name,
+                   AVG(ce.distance) AS avg_dist,
+                   COUNT(*) AS hits
+            FROM chunk_embeddings ce
+            JOIN chunks ch ON ch.id = ce.chunk_id
+            JOIN lessons l ON l.id = ch.lesson_id
+            JOIN courses c ON c.id = ch.course_id
+            WHERE ce.embedding MATCH ?
+              AND k = 30
+            GROUP BY l.id
+            ORDER BY avg_dist ASC
+            LIMIT ?
+            """,
+            (blob, limit),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
 def chunks_for_lesson(lesson_id: int, limit: int = 80) -> list[dict]:
     """Todos os chunks de uma aula, em ordem cronologica. Usado pelo gerador
     de quiz para ter o material completo da aula."""

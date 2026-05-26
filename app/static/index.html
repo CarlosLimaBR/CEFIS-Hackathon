@@ -233,7 +233,13 @@
         <div class="flex items-start gap-3">
           <div class="text-2xl">🎯</div>
           <div class="flex-1">
-            <h2 class="font-bold text-blue-900 mb-1">Diagnostico</h2>
+            <div class="flex items-center gap-2 mb-1">
+              <h2 class="font-bold text-blue-900">Diagnostico</h2>
+              <button @click="ouvir('diag', diagnostico)" :title="audioKey === 'diag' ? 'Parar' : 'Ouvir'" class="text-blue-700 hover:text-blue-900 text-base" :class="audioKey === 'diag' && 'animate-pulse'">
+                <span x-show="audioKey !== 'diag'">🔊</span>
+                <span x-show="audioKey === 'diag'">⏸️</span>
+              </button>
+            </div>
             <p class="text-sm text-blue-900/90 leading-relaxed" x-text="diagnostico"></p>
             <p x-show="catalogGap" class="mt-2 text-xs text-amber-800 bg-amber-100 inline-block px-2 py-1 rounded">⚠️ O catalogo nao cobre 100% do seu objetivo. O plano combina aulas + resumos da IA.</p>
           </div>
@@ -261,7 +267,27 @@
                 <h3 class="font-semibold text-sm leading-tight" :class="item.concluido ? 'line-through text-slate-400' : ''" x-text="item.title"></h3>
                 <p x-show="item.teacher" class="text-xs text-slate-500 mt-0.5" x-text="item.teacher"></p>
                 <p class="text-xs text-slate-600 mt-2 italic">💡 <span x-text="item.reason"></span></p>
-                <div x-show="item.type === 'resumo' && item.summary_content" class="mt-3 p-3 bg-purple-50 text-xs text-purple-900 rounded leading-relaxed" x-text="item.summary_content"></div>
+
+                <!-- Resumo IA: texto + botao audio + aulas relacionadas -->
+                <template x-if="item.type === 'resumo' && item.summary_content">
+                  <div class="mt-3">
+                    <div class="p-3 bg-purple-50 text-xs text-purple-900 rounded leading-relaxed flex items-start gap-2">
+                      <button @click="ouvir('item-'+i, item.summary_content)" :title="audioKey === 'item-'+i ? 'Parar' : 'Ouvir'" class="text-purple-700 hover:text-purple-900 mt-0.5">
+                        <span x-show="audioKey !== 'item-'+i">🔊</span>
+                        <span x-show="audioKey === 'item-'+i">⏸️</span>
+                      </button>
+                      <span x-text="item.summary_content"></span>
+                    </div>
+                    <div x-show="(item.related_lessons || []).length" class="mt-2 pl-1">
+                      <p class="text-xs text-slate-500 mb-1">📎 Para se aprofundar:</p>
+                      <template x-for="rl in (item.related_lessons || [])" :key="rl.lesson_id">
+                        <a :href="rl.course_url" target="_blank" class="block text-xs text-blue-700 hover:underline">
+                          • <span x-text="rl.course_title"></span> — <span class="text-slate-600" x-text="rl.lesson_title"></span>
+                        </a>
+                      </template>
+                    </div>
+                  </div>
+                </template>
               </div>
               <div x-show="item.type === 'aula' && item.lesson_id" class="flex flex-col items-end gap-1 whitespace-nowrap">
                 <a :href="item.course_url" target="_blank" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Assistir →</a>
@@ -290,6 +316,10 @@
             <div :class="msg.tipo === 'aluno' ? 'flex justify-end' : 'flex justify-start'">
               <div :class="msg.tipo === 'aluno' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'" class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm">
                 <p style="white-space: pre-wrap;" x-text="msg.texto"></p>
+                <button x-show="msg.tipo === 'tutor' && msg.texto && msg.texto.length > 5" @click="ouvir('chat-'+i, msg.texto)" :title="audioKey === 'chat-'+i ? 'Parar' : 'Ouvir'" class="mt-2 text-xs text-slate-500 hover:text-slate-800 inline-flex items-center gap-1">
+                  <span x-show="audioKey !== 'chat-'+i">🔊 Ouvir</span>
+                  <span x-show="audioKey === 'chat-'+i">⏸️ Parar</span>
+                </button>
                 <div x-show="msg.fontes && msg.fontes.length" class="mt-3 pt-3 border-t border-slate-300/50 space-y-1.5">
                   <p class="text-xs font-semibold text-slate-700">Fontes:</p>
                   <template x-for="f in msg.fontes" :key="f.lesson_id + '-' + f.segundo">
@@ -386,11 +416,20 @@
 
         <!-- Feedback / explicacao -->
         <div x-show="quizRespostaAtual !== null" class="mt-4 p-4 rounded-lg" :class="quizRespostaAtual === quizAtual.questions[quizIdx].correct_index ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'">
-          <p class="text-sm font-semibold mb-1" :class="quizRespostaAtual === quizAtual.questions[quizIdx].correct_index ? 'text-green-800' : 'text-amber-900'">
-            <span x-show="quizRespostaAtual === quizAtual.questions[quizIdx].correct_index">✅ Correto!</span>
-            <span x-show="quizRespostaAtual !== quizAtual.questions[quizIdx].correct_index">❌ Resposta certa: <span x-text="['A','B','C','D'][quizAtual.questions[quizIdx].correct_index]"></span></span>
+          <div class="flex items-start gap-2">
+            <p class="text-sm font-semibold flex-1" :class="quizRespostaAtual === quizAtual.questions[quizIdx].correct_index ? 'text-green-800' : 'text-amber-900'">
+              <span x-show="quizRespostaAtual === quizAtual.questions[quizIdx].correct_index">✅ Correto!</span>
+              <span x-show="quizRespostaAtual !== quizAtual.questions[quizIdx].correct_index">❌ Resposta certa: <span x-text="['A','B','C','D'][quizAtual.questions[quizIdx].correct_index]"></span></span>
+            </p>
+            <button @click="ouvir('quiz-'+quizIdx, quizAtual.questions[quizIdx].explanation)" :title="audioKey === 'quiz-'+quizIdx ? 'Parar' : 'Ouvir explicacao'" class="text-slate-600 hover:text-slate-900">
+              <span x-show="audioKey !== 'quiz-'+quizIdx">🔊</span>
+              <span x-show="audioKey === 'quiz-'+quizIdx">⏸️</span>
+            </button>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed mt-1" x-text="quizAtual.questions[quizIdx].explanation"></p>
+          <p x-show="quizAtual.course_title" class="text-xs text-slate-500 mt-2">
+            📎 Fonte: <a :href="`https://cefis.com.br/curso/${slugify(quizAtual.course_title)}/${quizAtual.course_id}`" target="_blank" class="text-blue-700 hover:underline" x-text="`${quizAtual.course_title} — ${quizAtual.lesson_title}`"></a>
           </p>
-          <p class="text-xs text-slate-700 leading-relaxed" x-text="quizAtual.questions[quizIdx].explanation"></p>
         </div>
       </div>
     </template>
@@ -409,6 +448,9 @@
             quizAcertos/quizAtual.questions.length >= 0.5 ? 'Voce entendeu o basico. Vale rever os pontos errados.' :
             'Recomendo assistir a aula novamente com atencao aos pontos errados.'
           "></p>
+          <a x-show="quizAtual && quizAtual.course_id" :href="`https://cefis.com.br/curso/${slugify(quizAtual.course_title)}/${quizAtual.course_id}`" target="_blank" class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+            📎 Assistir a aula completa →
+          </a>
         </div>
 
         <h4 class="font-semibold text-sm text-slate-700 mb-2">Revisao</h4>
@@ -503,6 +545,11 @@ function app() {
     quizRespostas: [],       // respostas dadas (array de int)
     quizRespostaAtual: null, // resposta da pergunta atual (null = nao respondeu)
     quizFinalizado: false,
+
+    // Audio TTS
+    audioKey: null,    // chave do elemento que esta tocando (null = nada)
+    audioEl: null,     // HTMLAudioElement em uso
+    audioCache: {},    // cache de blob URLs por chave
 
     async init() {
       // 1) restaura perfil + passo persistido (sobrevive refresh)
@@ -840,6 +887,64 @@ function app() {
       this.quizRespostaAtual = null;
       this.quizFinalizado = false;
       this.quizErro = '';
+    },
+
+    // ============== AUDIO TTS ==============
+    // Reproduz o texto via /api/tts. Mesmo botao reaperto = pausar.
+    async ouvir(key, texto) {
+      // Toggle: se ja esta tocando essa key, pausa
+      if (this.audioKey === key && this.audioEl) {
+        this.audioEl.pause();
+        this.audioEl = null;
+        this.audioKey = null;
+        return;
+      }
+      // Para qualquer audio anterior
+      if (this.audioEl) {
+        try { this.audioEl.pause(); } catch (e) {}
+        this.audioEl = null;
+      }
+      if (!texto || !texto.trim()) return;
+      this.audioKey = key;
+      try {
+        let url = this.audioCache[key];
+        if (!url) {
+          const r = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: texto.slice(0, 3800) })
+          });
+          if (!r.ok) {
+            console.error('[tts]', r.status, await r.text().catch(() => ''));
+            this.audioKey = null;
+            return;
+          }
+          const blob = await r.blob();
+          url = URL.createObjectURL(blob);
+          this.audioCache[key] = url;
+        }
+        const a = new Audio(url);
+        this.audioEl = a;
+        a.addEventListener('ended', () => {
+          if (this.audioKey === key) this.audioKey = null;
+        });
+        a.addEventListener('error', () => {
+          if (this.audioKey === key) this.audioKey = null;
+        });
+        await a.play();
+      } catch (e) {
+        console.error('[ouvir]', e);
+        this.audioKey = null;
+      }
+    },
+
+    // slugify identico ao do backend - para gerar URL da aula no quiz
+    slugify(text) {
+      if (!text) return 'curso';
+      const nfd = text.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const low = nfd.toLowerCase();
+      const clean = low.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return clean || 'curso';
     }
   };
 }

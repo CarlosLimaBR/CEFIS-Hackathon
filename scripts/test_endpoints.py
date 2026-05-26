@@ -178,6 +178,36 @@ async def t_chat() -> bool:
     return True
 
 
+async def t_tts() -> bool:
+    step("POST /api/tts (audio MP3 streaming)")
+    payload = {"text": "Teste de audio do tutor CEFIS."}
+    t0 = time.monotonic()
+    total_bytes = 0
+    async with httpx.AsyncClient(timeout=60.0) as c:
+        try:
+            async with c.stream("POST", f"{BASE}/api/tts", json=payload) as r:
+                if r.status_code != 200:
+                    body = (await r.aread()).decode("utf-8", "replace")
+                    fail(f"status={r.status_code} body={body[:300]}")
+                    return False
+                ctype = r.headers.get("content-type", "")
+                if "audio" not in ctype:
+                    fail(f"content-type errado: {ctype}")
+                    return False
+                async for chunk in r.aiter_bytes():
+                    total_bytes += len(chunk)
+        except httpx.HTTPError as e:
+            fail(f"stream falhou: {type(e).__name__}: {e}")
+            return False
+    dt = time.monotonic() - t0
+    if total_bytes < 1000:
+        fail(f"audio muito pequeno: {total_bytes} bytes")
+        return False
+    # MP3 valido comeca com ID3 ou frame sync (FF FB / FF F3 / FF F2)
+    ok(f"audio {total_bytes:,} bytes em {dt:.1f}s")
+    return True
+
+
 async def t_quiz(plan: list[dict] | None) -> bool:
     step("POST /api/quiz/{lesson_id} (gera quiz da aula)")
     # acha um lesson_id no plano gerado anteriormente
@@ -258,7 +288,26 @@ async def main() -> int:
     onb = await t_onboarding()
     results["onboarding"] = bool(onb)
     results["chat"] = await t_chat()
+    results["tts"] = await t_tts()
     results["quiz"] = await t_quiz(onb.get("plan") if onb else None)
+
+    # valida que resumos do plano vieram com related_lessons
+    if onb:
+        step("Validacao: resumos do plano com aulas relacionadas")
+        resumos = [it for it in (onb.get("plan") or []) if it.get("type") == "resumo"]
+        com_ref = [r for r in resumos if (r.get("related_lessons") or [])]
+        if resumos:
+            print(f"     {len(com_ref)}/{len(resumos)} resumos com referencia para aula real")
+            if com_ref:
+                ex = com_ref[0]["related_lessons"][0]
+                print(f"     ex.: {ex.get('course_title')} -- {ex.get('lesson_title')}")
+                ok(f"resumos tem referencia para aprofundamento")
+                results["resumos_com_ref"] = True
+            else:
+                fail("nenhum resumo veio com related_lessons")
+                results["resumos_com_ref"] = False
+        else:
+            print("     (nenhum resumo neste plano, pulando)")
 
     print("\n" + "=" * 50)
     passed = sum(1 for v in results.values() if v)

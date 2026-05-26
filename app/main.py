@@ -25,7 +25,24 @@ load_dotenv()
 
 from app import cefis_api, db, llm, prompts  # noqa: E402
 
+import logging
+import traceback
+
+logger = logging.getLogger("tutor")
+
 SESSION_COOKIE = "cefis_key"
+
+
+def _openai_error_detail(e: Exception) -> dict:
+    """Extrai a mensagem util de um erro OpenAI para devolver ao client."""
+    # openai>=1.x: AuthenticationError, RateLimitError, APIConnectionError, etc.
+    code = type(e).__name__
+    msg = str(e)[:500]
+    # tenta extrair body se for httpx error
+    body = getattr(e, "body", None)
+    if isinstance(body, dict):
+        msg = body.get("error", {}).get("message", msg)
+    return {"code": code, "message": msg}
 
 
 def slugify(text: str) -> str:
@@ -109,6 +126,57 @@ async def index() -> FileResponse:
 @app.get("/api/status")
 async def status() -> dict:
     return db.index_status()
+
+
+@app.get("/api/diag")
+async def diag() -> dict:
+    """Diagnostico rapido: confere .env, conectividade OpenAI, modelos.
+
+    NUNCA expoe a chave inteira — so um prefixo curto.
+    """
+    out: dict = {"env": {}, "openai": {}, "index": db.index_status()}
+
+    # 1) .env carregado?
+    api_key = os.environ.get("OPENAI_API_KEY") or ""
+    out["env"]["openai_key_present"] = bool(api_key)
+    out["env"]["openai_key_len"] = len(api_key)
+    out["env"]["openai_key_prefix"] = api_key[:10] + "..." if api_key else ""
+    out["env"]["embedding_model"] = os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+    out["env"]["chat_model"] = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+    out["env"]["data_dir"] = os.environ.get("CEFIS_DATA_DIR", "./Docs/output")
+    out["env"]["db_path"] = os.environ.get("CEFIS_DB_PATH", "./data/cefis.db")
+
+    if not api_key:
+        out["openai"]["error"] = "OPENAI_API_KEY ausente — .env nao carregado pelo servico"
+        return out
+
+    # 2) Embeddings — chamada simples e barata
+    try:
+        v = llm.embed("ping")
+        out["openai"]["embed_ok"] = True
+        out["openai"]["embed_dim"] = len(v)
+    except Exception as e:
+        traceback.print_exc()
+        out["openai"]["embed_ok"] = False
+        out["openai"]["embed_error"] = _openai_error_detail(e)
+
+    # 3) Chat — chamada minima
+    try:
+        r = llm.chat_json(
+            messages=[
+                {"role": "system", "content": 'Responda apenas com {"ok": true}'},
+                {"role": "user", "content": "ping"},
+            ],
+            temperature=0,
+        )
+        out["openai"]["chat_ok"] = True
+        out["openai"]["chat_sample"] = r
+    except Exception as e:
+        traceback.print_exc()
+        out["openai"]["chat_ok"] = False
+        out["openai"]["chat_error"] = _openai_error_detail(e)
+
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +304,11 @@ async def onboarding(
             )
             candidates = [dict(r) for r in cur.fetchall()]
     else:
-        query_emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+        try:
+            query_emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+        except Exception as e:
+            traceback.print_exc()
+            raise HTTPException(status_code=502, detail={"step": "embed_goal", **_openai_error_detail(e)})
         candidates = db.search_courses_by_embedding(query_emb, limit=30)
         if not candidates:
             candidates = db.search_courses_by_text(req.goal, limit=30)
@@ -298,12 +370,16 @@ async def onboarding(
             for c in candidates
         ],
     }
-    diagnosis = llm.chat_json(
-        messages=[
-            {"role": "system", "content": prompts.DIAGNOSIS_SYSTEM},
-            {"role": "user", "content": json.dumps(diag_payload, ensure_ascii=False)},
-        ]
-    )
+    try:
+        diagnosis = llm.chat_json(
+            messages=[
+                {"role": "system", "content": prompts.DIAGNOSIS_SYSTEM},
+                {"role": "user", "content": json.dumps(diag_payload, ensure_ascii=False)},
+            ]
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail={"step": "diagnosis_llm", **_openai_error_detail(e)})
 
     # 3) Carrega aulas dos cursos sugeridos
     course_ids = []
@@ -348,12 +424,16 @@ async def onboarding(
             for l in lessons
         ],
     }
-    plan = llm.chat_json(
-        messages=[
-            {"role": "system", "content": prompts.PLAN_SYSTEM},
-            {"role": "user", "content": json.dumps(plan_payload, ensure_ascii=False)},
-        ]
-    )
+    try:
+        plan = llm.chat_json(
+            messages=[
+                {"role": "system", "content": prompts.PLAN_SYSTEM},
+                {"role": "user", "content": json.dumps(plan_payload, ensure_ascii=False)},
+            ]
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail={"step": "plan_llm", **_openai_error_detail(e)})
 
     # 5) Enriquece itens do plano com URL real + aulas relacionadas
     items_out = []
@@ -471,7 +551,11 @@ async def courses_search(req: CoursesSearchRequest) -> dict:
     if not status_now.get("embeddings"):
         raise HTTPException(status_code=503, detail="Indice nao pronto")
 
-    emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+    try:
+        emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail={"step": "embed", **_openai_error_detail(e)})
     found = db.search_courses_by_embedding(emb, limit=req.limit + len(req.exclude_course_ids) + 5)
     if not found:
         found = db.search_courses_by_text(req.goal, limit=req.limit + 5)

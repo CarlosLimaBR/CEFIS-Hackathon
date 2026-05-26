@@ -36,8 +36,8 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 | **Interação de dúvidas com material real** | Chat com SSE streaming. RAG sobre **34.422 chunks** vetoriais das transcrições; cita **curso, aula e segundo** de origem | ✅ |
 | **Acompanhamento contínuo** | Checkbox "concluído" em cada item do plano + quiz por aula para validar retenção | ✅ |
 | **Interface bem projetada** | Wizard com progresso animado, branding CEFIS (logos oficiais), responsivo, perfil persiste em `localStorage` (sobrevive refresh) | ✅ |
-| **Múltiplos formatos** | Texto + chat conversacional + quiz interativo | ⚠️ parcial (sem áudio/podcast) |
-| **Adaptação ao estilo de aprendizagem** (visual/auditivo/cinestésico) | Não implementado — exige instrumento validado, alto risco em 1 dia | ❌ corte consciente |
+| **Múltiplos formatos** | Texto + chat conversacional + quiz interativo + **áudio TTS** (botão 🔊 em diagnóstico, resumos, chat, quiz) | ✅ |
+| **Adaptação ao estilo de aprendizagem** (visual/auditivo/cinestésico) | Áudio cobre o estilo **auditivo**; texto + diagramas cobrem o **visual**; quiz interativo cobre o **cinestésico** (engajamento ativo). Sem auto-detecção do estilo dominante. | ⚠️ parcial |
 
 ### Critérios de avaliação (briefing §5)
 
@@ -81,7 +81,13 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
    [Docs/specs/01-spec-logica.md](Docs/specs/01-spec-logica.md) com escopo, mapeamento de dados, diagramas Mermaid e checklist. [Docs/specs/prototipo.html](Docs/specs/prototipo.html) standalone para validação visual.
 
 10. **🏆 Testes E2E automatizados**
-    [scripts/test_endpoints.py](scripts/test_endpoints.py) valida status + onboarding + chat SSE + quiz com asserções claras. **4/4 passando** no momento da entrega.
+    [scripts/test_endpoints.py](scripts/test_endpoints.py) valida status + onboarding + chat SSE + TTS + quiz + referências em resumos. **6/6 passando** no momento da entrega.
+
+11. **🏆 Áudio em todo conteúdo gerado pela IA**
+    Botão 🔊 ao lado do diagnóstico, dos resumos do plano, das respostas do chat e das explicações do quiz. MP3 streaming via OpenAI TTS (`tts-1`), toggle play/pausa, cache por sessão.
+
+12. **🏆 Toda saída da IA aponta para uma aula real**
+    Resumo gerado pela IA? Mostra **"📎 Para se aprofundar:"** com 1-2 aulas relacionadas semanticamente (buscadas via embedding do título do resumo). Resposta do chat? Cita curso + aula + segundo. Quiz? Resultado final tem botão "Assistir a aula completa". O aluno **nunca** fica sem caminho para o material original.
 
 ---
 

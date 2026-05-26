@@ -4,7 +4,9 @@ Tutor de aprendizado personalizado feito para o **Hackathon de Inovação em Apr
 
 Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando o catálogo real, chat de dúvidas com RAG sobre as transcrições das aulas, quiz por aula, áudio em todo conteúdo gerado pela IA, trilha evolutiva multi-fase e histórico cumulativo.
 
-**Status:** ✅ 9/9 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless.
+🌐 **Acesse:** [https://tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org)
+
+**Status:** ✅ 9/9 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless. Deploy público em Windows Server com IIS + Let's Encrypt.
 
 ---
 

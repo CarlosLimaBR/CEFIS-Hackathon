@@ -133,6 +133,28 @@ def lessons_for_courses(course_ids: list[int]) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
+def chunks_for_lesson(lesson_id: int, limit: int = 80) -> list[dict]:
+    """Todos os chunks de uma aula, em ordem cronologica. Usado pelo gerador
+    de quiz para ter o material completo da aula."""
+    with db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT ch.id, ch.text, ch.start_seconds, ch.end_seconds,
+                   l.title AS lesson_title, l.duration AS lesson_duration,
+                   c.id AS course_id, c.title AS course_title,
+                   c.teacher_name
+            FROM chunks ch
+            JOIN lessons l ON l.id = ch.lesson_id
+            JOIN courses c ON c.id = ch.course_id
+            WHERE ch.lesson_id = ?
+            ORDER BY ch.start_seconds
+            LIMIT ?
+            """,
+            (lesson_id, limit),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
 def rag_search(query_embedding: list[float], k: int = 6) -> list[dict]:
     """Top-K chunks mais proximos da query - usado pelo chat."""
     blob = serialize_vec(query_embedding)

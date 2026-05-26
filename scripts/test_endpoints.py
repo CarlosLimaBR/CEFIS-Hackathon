@@ -178,6 +178,73 @@ async def t_chat() -> bool:
     return True
 
 
+async def t_quiz(plan: list[dict] | None) -> bool:
+    step("POST /api/quiz/{lesson_id} (gera quiz da aula)")
+    # acha um lesson_id no plano gerado anteriormente
+    lesson_id = None
+    if plan:
+        for it in plan:
+            if it.get("type") == "aula" and it.get("lesson_id"):
+                lesson_id = it["lesson_id"]
+                break
+    if not lesson_id:
+        # fallback: busca qualquer aula com transcricao indexada
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            r = await c.post(
+                f"{BASE}/api/onboarding",
+                json={
+                    "name": "Bot",
+                    "areas": [4],
+                    "goal": "Quero entender melhoria continua e PDCA",
+                    "level": "Iniciante",
+                    "minutes": 30,
+                },
+                timeout=120.0,
+            )
+            for it in (r.json().get("plan") or []):
+                if it.get("type") == "aula" and it.get("lesson_id"):
+                    lesson_id = it["lesson_id"]
+                    break
+    if not lesson_id:
+        fail("nenhuma aula com lesson_id disponivel para testar quiz")
+        return False
+    print(f"     lesson_id={lesson_id}")
+    t0 = time.monotonic()
+    async with httpx.AsyncClient(timeout=120.0) as c:
+        try:
+            r = await c.post(f"{BASE}/api/quiz/{lesson_id}")
+        except httpx.HTTPError as e:
+            fail(f"erro de rede: {e}")
+            return False
+    dt = time.monotonic() - t0
+    if r.status_code != 200:
+        fail(f"status={r.status_code} em {dt:.1f}s body={r.text[:500]}")
+        return False
+    d = r.json()
+    questions = d.get("questions") or []
+    if len(questions) < 3:
+        fail(f"poucas perguntas geradas: {len(questions)}")
+        return False
+    # valida estrutura
+    for i, q in enumerate(questions):
+        if not isinstance(q.get("question"), str) or not q["question"].strip():
+            fail(f"pergunta {i} sem enunciado: {q}")
+            return False
+        opts = q.get("options") or []
+        if len(opts) < 2:
+            fail(f"pergunta {i} com poucas alternativas: {opts}")
+            return False
+        ci = q.get("correct_index")
+        if not isinstance(ci, int) or not 0 <= ci < len(opts):
+            fail(f"pergunta {i} correct_index invalido: {ci} (opts={len(opts)})")
+            return False
+    ok(f"{len(questions)} perguntas em {dt:.1f}s — aula '{d.get('lesson_title')}'")
+    q0 = questions[0]
+    print(f"     ex.: \"{q0['question'][:80]}\" -> resposta {q0['correct_index']}")
+    print(f"          {len(q0['options'])} alternativas, explicacao: {q0.get('explanation','')[:80]}...")
+    return True
+
+
 async def main() -> int:
     print(f"\n=== Teste E2E - Tutor IA CEFIS ===")
     print(f"Base: {BASE}\n")
@@ -188,8 +255,10 @@ async def main() -> int:
         print("\n!!! /api/status falhou - abortando demais testes")
         return 1
 
-    results["onboarding"] = bool(await t_onboarding())
+    onb = await t_onboarding()
+    results["onboarding"] = bool(onb)
     results["chat"] = await t_chat()
+    results["quiz"] = await t_quiz(onb.get("plan") if onb else None)
 
     print("\n" + "=" * 50)
     passed = sum(1 for v in results.values() if v)

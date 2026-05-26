@@ -299,6 +299,82 @@ async def onboarding(
     }
 
 
+@app.post("/api/quiz/{lesson_id}")
+async def quiz(lesson_id: int) -> dict:
+    """Gera 5 perguntas multipla escolha a partir da transcricao da aula."""
+    chunks = db.chunks_for_lesson(lesson_id, limit=80)
+    if not chunks:
+        raise HTTPException(
+            status_code=404,
+            detail="Aula nao encontrada ou sem transcricao indexada",
+        )
+
+    lesson_title = chunks[0]["lesson_title"]
+    course_title = chunks[0]["course_title"]
+    course_id = chunks[0]["course_id"]
+    teacher = chunks[0].get("teacher_name")
+
+    # concatena ate ~12k caracteres da transcricao
+    content_parts: list[str] = []
+    total = 0
+    for ch in chunks:
+        t = ch["text"]
+        if total + len(t) > 12000:
+            break
+        content_parts.append(t)
+        total += len(t)
+    content = " ".join(content_parts)
+
+    payload = {
+        "curso": course_title,
+        "aula": lesson_title,
+        "transcricao": content,
+    }
+    result = llm.chat_json(
+        messages=[
+            {"role": "system", "content": prompts.QUIZ_SYSTEM},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
+        temperature=0.4,
+    )
+    questions = result.get("questions") or []
+    # sanitize basico
+    cleaned = []
+    for q in questions:
+        opts = q.get("options") or []
+        ci = q.get("correct_index")
+        if (
+            isinstance(q.get("question"), str)
+            and isinstance(opts, list)
+            and len(opts) >= 2
+            and isinstance(ci, int)
+            and 0 <= ci < len(opts)
+        ):
+            cleaned.append(
+                {
+                    "question": q["question"].strip(),
+                    "options": [str(o).strip() for o in opts],
+                    "correct_index": ci,
+                    "explanation": (q.get("explanation") or "").strip(),
+                }
+            )
+
+    if not cleaned:
+        raise HTTPException(
+            status_code=502,
+            detail="Modelo nao retornou perguntas validas",
+        )
+
+    return {
+        "lesson_id": lesson_id,
+        "lesson_title": lesson_title,
+        "course_id": course_id,
+        "course_title": course_title,
+        "teacher": teacher,
+        "questions": cleaned,
+    }
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest) -> StreamingResponse:
     """SSE streaming. Cada linha 'data: ...' e um pedaco de resposta ou metadata."""

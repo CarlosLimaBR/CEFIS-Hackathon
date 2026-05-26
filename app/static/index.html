@@ -513,8 +513,8 @@
           <div class="text-2xl">🎯</div>
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
-              <h2 class="font-bold text-blue-900">Diagnostico</h2>
-              <button @click="ouvir('diag', diagnostico)" :title="audioKey === 'diag' ? 'Parar' : 'Ouvir'" class="text-blue-700 hover:text-blue-900 text-base" :class="audioKey === 'diag' && 'animate-pulse'">
+              <h2 class="font-bold text-blue-900 dark:text-blue-200">Mensagem do tutor</h2>
+              <button @click="ouvir('diag', diagnostico)" :title="audioKey === 'diag' ? 'Parar' : 'Ouvir'" class="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100 text-base" :class="audioKey === 'diag' && 'animate-pulse'">
                 <span x-show="audioKey !== 'diag'">🔊</span>
                 <span x-show="audioKey === 'diag'">⏸️</span>
               </button>
@@ -1800,6 +1800,13 @@ function app() {
             ? `Pronto ${this.perfil.name}! Esta e a fase ${this.faseAtual} - mais avancada. Vou citar so o que ainda nao vimos.`
             : `Oi ${this.perfil.name}! Eu sou seu tutor CEFIS. Posso responder duvidas sobre qualquer aula do plano. Pergunte a vontade.`,
         }];
+        // Auto-play da mensagem do tutor (TTS) — recebe a sessao falando
+        if (this.diagnostico && this.diagnostico.length > 5) {
+          setTimeout(() => {
+            try { this.ouvir('diag', this.diagnostico); }
+            catch (e) { console.warn('[autoplay tutor]', e); }
+          }, 800);
+        }
       } catch (e) {
         clearInterval(tick);
         this.erro = 'Falha ao gerar plano: ' + e.message;

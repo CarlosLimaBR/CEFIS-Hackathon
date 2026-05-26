@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  web.config para Tutor IA CEFIS
+  IIS + URL Rewrite + ARR -> reverse proxy para uvicorn em localhost:8000
+
+  CRITICO: alem deste arquivo, e necessario ajustar 2 settings server-wide
+  do ARR no IIS Manager (so e preciso fazer 1 vez):
+
+    IIS Manager -> [servidor] -> Application Request Routing Cache
+    -> "Server Proxy Settings" (painel direito)
+    -> Enable proxy: marcado
+    -> Time-out (seconds): 300        <- evita corte em SSE longo
+    -> Response buffer threshold (KB): 0   <- CRITICO: SEM buffering
+    -> Apply
+
+  Sem o "Response buffer threshold = 0" o ARR junta todos os chunks da
+  resposta e envia tudo no final - quebra o streaming token-a-token do
+  chat e do TTS.
+-->
+<configuration>
+  <system.webServer>
+
+    <!-- Aceita URLs com '+' e '%' no path -->
+    <security>
+      <requestFiltering allowDoubleEscaping="true" />
+    </security>
+
+    <rewrite>
+      <rules>
+        <clear />
+        <rule name="ReverseProxyToUvicorn" enabled="true" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions logicalGrouping="MatchAny" trackAllCaptures="false" />
+          <action type="Rewrite" url="http://localhost:8000/{R:0}" appendQueryString="true" />
+        </rule>
+      </rules>
+    </rewrite>
+
+    <!-- Hint para proxies/CDN nao bufferizarem (caso houver outra camada) -->
+    <httpProtocol>
+      <customHeaders>
+        <add name="X-Accel-Buffering" value="no" />
+        <add name="X-Content-Type-Options" value="nosniff" />
+        <add name="Referrer-Policy" value="strict-origin-when-cross-origin" />
+      </customHeaders>
+    </httpProtocol>
+
+    <!-- SPA estatica nao deve cachear no browser (uvicorn ja serve em /static) -->
+    <staticContent>
+      <clientCache cacheControlMode="DisableCache" />
+    </staticContent>
+
+  </system.webServer>
+</configuration>

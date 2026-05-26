@@ -1,4 +1,6 @@
 @echo off
+SETLOCAL ENABLEEXTENSIONS
+
 REM ============================================================
 REM Atualiza o Tutor IA CEFIS no servidor (git pull + deps + restart).
 REM Rode como ADMINISTRADOR.
@@ -6,81 +8,74 @@ REM ============================================================
 
 cd /d "%~dp0"
 
-REM Confere admin
+REM 0) Confere admin
 net session >nul 2>nul
-if errorlevel 1 (
-    echo [ERRO] Execute como administrador (botao direito -^> Executar como administrador).
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto noadmin
 
-REM Confere git
+REM 0) Confere git
 where git >nul 2>nul
-if errorlevel 1 (
-    echo [AVISO] git nao encontrado no PATH.
-    echo Voce usou o download ZIP? Entao precisa baixar o novo ZIP e
-    echo sobrescrever os arquivos manualmente (preservando .env, data\, .venv\).
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto nogit
 
 echo ============================================================
 echo Atualizando Tutor IA CEFIS
 echo ============================================================
 echo.
 
-REM 1. Parar servico
 echo [1/5] Parando servico TutorCEFIS...
 nssm stop TutorCEFIS
 timeout /t 2 >nul
 
-REM 2. Backup do .env por seguranca (nao deve ser sobrescrito mas garante)
-if exist .env (
-    copy .env .env.bkp >nul
-    echo [info] backup do .env criado
-)
+REM backup do .env por seguranca
+if exist .env copy .env .env.bkp >nul
 
-REM 3. git pull
 echo [2/5] Baixando atualizacoes do GitHub...
 git fetch --all
 git reset --hard origin/main
-if errorlevel 1 (
-    echo [ERRO] git pull falhou. Veja a mensagem acima.
-    nssm start TutorCEFIS
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto failed_pull
 
-REM 3b. restaurar .env se o git removeu por algum motivo
-if not exist .env (
-    if exist .env.bkp copy .env.bkp .env >nul
-    echo [info] .env restaurado do backup
-)
+REM restaura .env se git removeu
+if not exist .env if exist .env.bkp copy .env.bkp .env >nul
 
-REM 4. Atualizar dependencias
 echo [3/5] Atualizando dependencias Python...
 .venv\Scripts\python.exe -m pip install -r requirements.txt --quiet
 
-REM 5. Reiniciar servico
 echo [4/5] Reiniciando servico...
 nssm start TutorCEFIS
 timeout /t 3 >nul
 
-REM 6. Validar
-echo [5/5] Validando...
+echo [5/5] Validando /api/status...
 curl -fsS http://localhost:8000/api/status >nul 2>nul
-if errorlevel 1 (
-    echo [AVISO] Servico nao respondeu em /api/status. Veja os logs:
-    echo     type data\service-err.log
-) else (
-    echo.
-    echo ============================================================
-    echo Atualizacao concluida com sucesso!
-    echo Servico TutorCEFIS rodando em http://localhost:8000
-    echo ============================================================
-)
+if errorlevel 1 goto svc_warn
 
-REM Limpa backup se nao precisou
-if exist .env if exist .env.bkp del .env.bkp
+echo.
+echo ============================================================
+echo Atualizacao concluida com sucesso.
+echo Servico TutorCEFIS rodando em http://localhost:8000
+echo ============================================================
+if exist .env.bkp del .env.bkp
+goto end
 
+:noadmin
+echo [ERRO] Execute como administrador.
+echo Botao direito em atualizar.bat e "Executar como administrador".
+goto end
+
+:nogit
+echo [AVISO] git nao encontrado no PATH.
+echo Voce usou Download ZIP? Entao baixe o ZIP novo manualmente:
+echo   https://github.com/CarlosLimaBR/CEFIS-Hackathon/archive/refs/heads/main.zip
+echo Sobrescreva os arquivos preservando: .env data .venv Docs\output
+goto end
+
+:failed_pull
+echo [ERRO] git pull falhou. Reiniciando servico antigo.
+nssm start TutorCEFIS
+goto end
+
+:svc_warn
+echo [AVISO] Servico nao respondeu em /api/status. Diagnostique:
+echo     type data\service-err.log
+
+:end
 pause
+endlocal

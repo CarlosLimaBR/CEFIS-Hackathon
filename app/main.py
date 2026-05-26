@@ -113,6 +113,16 @@ class TTSRequest(BaseModel):
     voice: str = Field(default="alloy", pattern="^(alloy|echo|fable|onyx|nova|shimmer)$")
 
 
+class RoleplayRequest(BaseModel):
+    cenario: str = Field(..., min_length=10, max_length=600)
+    mensagens: list[dict] = Field(default_factory=list, max_length=30)
+
+
+class RoleplayFeedbackRequest(BaseModel):
+    cenario: str = Field(..., min_length=10, max_length=600)
+    mensagens: list[dict] = Field(..., min_length=2, max_length=30)
+
+
 # ---------------------------------------------------------------------------
 # Rotas
 # ---------------------------------------------------------------------------
@@ -672,6 +682,79 @@ async def quiz(lesson_id: int) -> dict:
         "course_title": course_title,
         "teacher": teacher,
         "questions": cleaned,
+    }
+
+
+@app.post("/api/roleplay")
+async def roleplay(req: RoleplayRequest) -> StreamingResponse:
+    """Simulacao de papel: tutor interpreta um personagem do cenario.
+    SSE streaming igual ao chat."""
+    sys = prompts.ROLEPLAY_SYSTEM + "\n\nCENARIO DA SIMULACAO:\n" + req.cenario
+    messages: list[dict] = [{"role": "system", "content": sys}]
+    for m in req.mensagens[-20:]:
+        if m.get("role") in ("user", "assistant"):
+            messages.append({"role": m["role"], "content": str(m.get("content", ""))[:2000]})
+
+    def event_stream():
+        try:
+            for token in llm.chat_stream(messages, temperature=0.8):
+                yield f"event: token\ndata: {json.dumps({'t': token}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/api/roleplay/feedback")
+async def roleplay_feedback(req: RoleplayFeedbackRequest) -> dict:
+    """Avalia a simulacao e retorna feedback estruturado + aulas relacionadas."""
+    transcript = "CENARIO:\n" + req.cenario + "\n\nDIALOGO:\n"
+    for m in req.mensagens:
+        role = m.get("role", "user")
+        speaker = "ALUNO" if role == "user" else "PERSONAGEM"
+        transcript += f"{speaker}: {str(m.get('content',''))[:2000]}\n\n"
+
+    try:
+        fb = llm.chat_json(
+            messages=[
+                {"role": "system", "content": prompts.ROLEPLAY_FEEDBACK_SYSTEM},
+                {"role": "user", "content": transcript[:8000]},
+            ],
+            temperature=0.3,
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail={"step": "feedback_llm", **_openai_error_detail(e)})
+
+    # Enriquece com aulas reais relacionadas aos topicos sugeridos
+    aulas_recomendadas_keys = fb.get("aulas_recomendadas") or []
+    aulas_links: list[dict] = []
+    if aulas_recomendadas_keys:
+        query = " ".join(aulas_recomendadas_keys) + " " + req.cenario
+        try:
+            emb = llm.embed(query)
+            related = db.lessons_by_embedding(emb, limit=3)
+            aulas_links = [
+                {
+                    "lesson_id": r["lesson_id"],
+                    "lesson_title": r["lesson_title"],
+                    "course_id": r["course_id"],
+                    "course_title": r["course_title"],
+                    "course_url": course_url(r["course_id"], r["course_title"]),
+                }
+                for r in related
+            ]
+        except Exception:
+            pass
+
+    return {
+        "nota": fb.get("nota"),
+        "resumo": fb.get("resumo"),
+        "pontos_fortes": fb.get("pontos_fortes") or [],
+        "pontos_melhoria": fb.get("pontos_melhoria") or [],
+        "aulas_recomendadas_keys": aulas_recomendadas_keys,
+        "aulas_links": aulas_links,
     }
 
 

@@ -6,6 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/static/simbolo-solo-cefis.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Aplica modo escuro o mais cedo possivel para evitar "flash" branco
+    try {
+      const dm = localStorage.getItem('cefis_dark');
+      if (dm === '1') document.documentElement.classList.add('dark');
+      // Tailwind dark mode via classe (precisa ser configurado antes do tailwind carregar)
+      window.tailwind = window.tailwind || {};
+      window.tailwind.config = { darkMode: 'class' };
+    } catch (e) {}
+  </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +32,9 @@
     .typing-dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
     [x-cloak] { display: none !important; }
+    /* Dark mode: invertes selecionados que nao podem ser feitos so via dark: do tailwind */
+    html.dark body { background: #0f172a; color: #e2e8f0; }
+    html.dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased" x-data="app()" x-init="init()" x-cloak>
@@ -43,6 +56,63 @@
       <span x-text="status.embeddings || 0"></span> / <span x-text="status.chunks || 0"></span> chunks processados
     </div>
     <p class="text-xs text-slate-400 text-center mt-4">Esta tela atualiza sozinha a cada 5s.</p>
+  </div>
+</div>
+
+<!-- ================== WELCOME (aluno que volta) ================== -->
+<div x-show="tela === 'welcome'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+  <div class="w-full max-w-xl">
+    <div class="text-center mb-6">
+      <img src="/static/logo-cefis-w.svg" alt="CEFIS" class="h-9 mx-auto mb-4" />
+      <h1 class="text-2xl sm:text-3xl font-bold text-white">👋 Bem-vindo de volta, <span x-text="perfil.name || 'aluno'"></span>!</h1>
+      <p class="text-blue-100 mt-2 text-sm">Voce ja avancou na sua trilha. Por onde quer continuar?</p>
+    </div>
+
+    <!-- Card: ultima sessao -->
+    <div x-show="historico.planos && historico.planos.length" class="bg-white rounded-2xl shadow-2xl p-5 mb-3">
+      <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Sua trilha atual</div>
+      <div class="flex items-start gap-3 mb-3">
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 mt-0.5 whitespace-nowrap"
+              x-text="`Fase ${(historico.planos[historico.planos.length-1]||{}).phase || 1}`"></span>
+        <div class="flex-1 min-w-0">
+          <h2 class="font-bold text-base leading-tight" x-text="(historico.planos[historico.planos.length-1]||{}).goal || perfil.goal || 'sem objetivo'"></h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Ultima sessao: <span x-text="formatData((historico.planos[historico.planos.length-1]||{}).ts || Date.now())"></span>
+            ·
+            <span x-text="((historico.planos[historico.planos.length-1]||{}).completed || 0) + ' de ' + ((historico.planos[historico.planos.length-1]||{}).items_count || 0) + ' itens concluidos'"></span>
+          </p>
+        </div>
+      </div>
+      <button @click="continuarUltimaSessao()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition">
+        ▶ Continuar sessao atual
+      </button>
+    </div>
+
+    <!-- Stats rapidos -->
+    <div class="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4 mb-3 text-white text-center text-sm">
+      <span class="mr-3">📚 <strong x-text="statAulas"></strong> aulas</span>
+      <span class="mr-3">❓ <strong x-text="statQuizzes"></strong> quizzes <span x-show="statQuizzes > 0">(<span x-text="statQuizMediaAcerto"></span>%)</span></span>
+      <span class="mr-3">⏱ <strong x-text="formatMin(statTempoTotalMin)"></strong></span>
+    </div>
+
+    <!-- Botoes secundarios -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <button @click="abrirNovaSessao(); tela='plano'" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+        + Nova sessao
+      </button>
+      <button @click="tela='onboarding'; passo=1" class="bg-white/10 hover:bg-white/20 text-white border border-white/30 py-2.5 rounded-lg transition text-sm">
+        ✏️ Editar perfil
+      </button>
+      <button @click="tela='plano'; abrirProgresso()" class="bg-white/10 hover:bg-white/20 text-white border border-white/30 py-2.5 rounded-lg transition text-sm">
+        📊 Ver progresso
+      </button>
+    </div>
+
+    <p class="text-center mt-4">
+      <button @click="if(confirm('Começar uma trilha nova vai limpar o plano atual. O historico de aulas vistas e mantido.')) { plano = []; conversas = []; diagnostico = ''; cursosSelecionados = []; faseAtual = 1; passo = 1; tela = 'onboarding'; }" class="text-blue-200 hover:text-white underline text-xs">
+        🗂️ Começar trilha do zero
+      </button>
+    </p>
   </div>
 </div>
 
@@ -307,8 +377,8 @@
 </div>
 
 <!-- ================== PLANO + CHAT ================== -->
-<div x-show="tela === 'plano'" class="min-h-screen bg-slate-50">
-  <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-10">
+<div x-show="tela === 'plano'" class="min-h-screen bg-slate-50 dark:bg-slate-950 dark:text-slate-200">
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-4 sm:px-6 py-3 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
         <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-9 h-9 flex-shrink-0" />
@@ -331,6 +401,11 @@
           title="Ver progresso acumulado na trilha"
         >📊 <span class="hidden sm:inline">Progresso</span></button>
         <button
+          @click="abrirRoleplay()"
+          class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition flex items-center gap-1"
+          title="Treine argumentacao em cenarios reais com o tutor interpretando um personagem"
+        >🎭 <span class="hidden sm:inline">Pratique</span></button>
+        <button
           @click="abrirNovaSessao()"
           :disabled="carregando"
           class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition flex items-center gap-1"
@@ -338,7 +413,11 @@
         >
           <span>+ Nova sessao</span>
         </button>
-        <button @click="editarPerfil()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Editar perfil</button>
+        <button @click="editarPerfil()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg">Editar perfil</button>
+        <button @click="darkMode = !darkMode" :title="darkMode ? 'Modo claro' : 'Modo escuro'" class="px-2 py-1.5 text-base text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg">
+          <span x-show="!darkMode">🌙</span>
+          <span x-show="darkMode">☀️</span>
+        </button>
       </div>
     </div>
   </header>
@@ -369,7 +448,7 @@
 
       <div class="space-y-3">
         <template x-for="(item, i) in plano" :key="i">
-          <div class="card-hover bg-white rounded-xl border border-slate-200 p-4">
+          <div class="card-hover bg-white dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-slate-200 p-4">
             <div class="flex items-start gap-3">
               <button @click="alternarConcluido(item)" :class="item.concluido ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-blue-400'" class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition">
                 <svg x-show="item.concluido" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -417,7 +496,7 @@
 
     <!-- Chat -->
     <div class="lg:col-span-2">
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-[88px]">
+      <div class="bg-white dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-[88px]">
         <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
           <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white text-sm font-bold">🤖</div>
           <div class="flex-1">
@@ -457,14 +536,163 @@
           </div>
         </div>
 
-        <form @submit.prevent="enviarPergunta()" class="border-t border-slate-200 p-3 flex gap-2">
-          <input x-model="perguntaChat" type="text" placeholder="Digite sua duvida..." :disabled="chatDigitando" class="flex-1 text-sm rounded-lg border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100">
-          <button type="submit" :disabled="!perguntaChat.trim() || chatDigitando" :class="(perguntaChat.trim() && !chatDigitando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400'" class="px-4 rounded-lg font-medium transition">
+        <form @submit.prevent="enviarPergunta()" class="border-t border-slate-200 dark:border-slate-700 p-3 flex gap-2">
+          <input x-model="perguntaChat" type="text" placeholder="Digite sua duvida ou use o microfone..." :disabled="chatDigitando" class="flex-1 text-sm rounded-lg border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100 dark:disabled:bg-slate-800">
+          <button
+            type="button"
+            @click="iniciarVoz()"
+            :title="vozReconhecendo ? 'Parar microfone' : 'Falar com o tutor'"
+            :disabled="chatDigitando"
+            :class="vozReconhecendo ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'"
+            class="px-3 rounded-lg transition flex items-center justify-center"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0M12 18v3M8 21h8" />
+              <rect x="9" y="3" width="6" height="12" rx="3" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button type="submit" :disabled="!perguntaChat.trim() || chatDigitando" :class="(perguntaChat.trim() && !chatDigitando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500'" class="px-4 rounded-lg font-medium transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
           </button>
         </form>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ================== MODAL "PRATIQUE COM O TUTOR" (ROLEPLAY) ================== -->
+<div x-show="mostrarRoleplay" @keydown.escape.window="fecharRoleplay()" class="fixed inset-0 bg-black/60 flex items-start justify-center p-4 z-50 overflow-y-auto">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-8 max-h-[90vh] flex flex-col">
+
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <div>
+        <h3 class="font-bold text-lg dark:text-white">🎭 Pratique com o tutor</h3>
+        <p x-show="roleplayEtapa === 'escolher'" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Escolha um cenario real do trabalho. O tutor interpreta o personagem e voce treina argumentacao.</p>
+        <p x-show="roleplayEtapa === 'simulando' && roleplayAtivo" class="text-xs text-purple-700 dark:text-purple-300 mt-0.5 italic" x-text="roleplayAtivo?.titulo"></p>
+        <p x-show="roleplayEtapa === 'feedback'" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Avaliacao da sua simulacao</p>
+      </div>
+      <button @click="fecharRoleplay()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xl">&times;</button>
+    </div>
+
+    <!-- ETAPA 1: ESCOLHER CENARIO -->
+    <template x-if="roleplayEtapa === 'escolher'">
+      <div class="px-6 py-5 overflow-y-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <template x-for="(c, i) in roleplayCenarios" :key="i">
+            <button @click="iniciarRoleplayCenario(c)" class="text-left p-4 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 rounded-xl transition group">
+              <div class="text-2xl mb-1" x-text="c.icone"></div>
+              <div class="font-semibold text-sm dark:text-white" x-text="c.titulo"></div>
+              <div class="text-xs text-slate-600 dark:text-slate-400 mt-1" x-text="c.desc"></div>
+            </button>
+          </template>
+        </div>
+
+        <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Ou descreva um cenario seu:</label>
+          <textarea x-model="roleplayCenarioCustom" rows="3" placeholder="Ex.: Voce e meu sogro engenheiro que duvida do retorno em mudar meu plano de carreira. Vou defender a transicao para contabilidade tributaria." class="w-full text-sm rounded-lg border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 px-3 py-2 border"></textarea>
+          <button @click="iniciarRoleplayCustom()" :disabled="roleplayCenarioCustom.trim().length < 20" :class="roleplayCenarioCustom.trim().length >= 20 ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 text-slate-400'" class="mt-2 px-4 py-2 rounded-lg text-sm font-medium transition w-full sm:w-auto">
+            Comecar simulacao personalizada →
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ETAPA 2: SIMULANDO -->
+    <template x-if="roleplayEtapa === 'simulando'">
+      <div class="flex-1 flex flex-col min-h-0">
+        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-3 scrollbar-thin">
+          <template x-for="(m, i) in roleplayConversa" :key="i">
+            <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'" x-show="!(i === 0 && m.role === 'user' && m.content.startsWith('(o aluno'))">
+              <div :class="m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-100'" class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm">
+                <p x-show="m.role === 'assistant'" class="text-xs font-semibold opacity-70 mb-1">🎭 personagem</p>
+                <p style="white-space: pre-wrap;" x-text="m.content || '...'"></p>
+              </div>
+            </div>
+          </template>
+          <div x-show="roleplayDigitando && roleplayConversa[roleplayConversa.length-1]?.content?.length === 0" class="flex justify-start">
+            <div class="bg-purple-100 dark:bg-purple-900/40 rounded-2xl px-4 py-3 flex gap-1">
+              <div class="w-1.5 h-1.5 bg-purple-500 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-purple-500 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-purple-500 rounded-full typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <form @submit.prevent="enviarRoleplay(false)" class="border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex gap-2">
+          <input x-model="roleplayInput" type="text" placeholder="Responda ao personagem..." :disabled="roleplayDigitando" class="flex-1 text-sm rounded-lg border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100">
+          <button type="submit" :disabled="!roleplayInput.trim() || roleplayDigitando" :class="(roleplayInput.trim() && !roleplayDigitando) ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-200 text-slate-400'" class="px-4 rounded-lg font-medium transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </form>
+
+        <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
+          <button @click="fecharRoleplay()" class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Sair</button>
+          <button @click="pedirFeedbackRoleplay()" :disabled="roleplayConversa.filter(m => m.role === 'user' && !m.content.startsWith('(o aluno')).length < 2 || roleplayDigitando" :class="(roleplayConversa.filter(m => m.role === 'user' && !m.content.startsWith('(o aluno')).length >= 2 && !roleplayDigitando) ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-200 text-slate-400'" class="text-xs px-3 py-1.5 rounded-lg font-medium">
+            🎯 Encerrar e ver feedback
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ETAPA 3: FEEDBACK -->
+    <template x-if="roleplayEtapa === 'feedback'">
+      <div class="px-6 py-5 overflow-y-auto">
+        <div x-show="roleplayCarregandoFeedback" class="text-center py-10 text-slate-500">
+          <svg class="w-8 h-8 animate-spin inline mb-3 text-purple-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          <p class="text-sm">Avaliando sua simulacao...</p>
+        </div>
+
+        <template x-if="roleplayFeedback && !roleplayCarregandoFeedback">
+          <div class="space-y-4">
+            <!-- Nota -->
+            <div class="text-center bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-xl p-5">
+              <div class="text-5xl font-bold" :class="(roleplayFeedback.nota || 0) >= 8 ? 'text-green-600' : (roleplayFeedback.nota || 0) >= 6 ? 'text-amber-600' : 'text-red-600'" x-text="(roleplayFeedback.nota ?? '?') + '/10'"></div>
+              <p class="text-sm text-slate-700 dark:text-slate-200 mt-2" x-text="roleplayFeedback.resumo || ''"></p>
+            </div>
+
+            <!-- Pontos fortes -->
+            <div x-show="(roleplayFeedback.pontos_fortes || []).length > 0">
+              <h4 class="font-semibold text-sm text-green-700 dark:text-green-400 mb-2">✅ Pontos fortes</h4>
+              <ul class="space-y-1.5">
+                <template x-for="p in roleplayFeedback.pontos_fortes" :key="p">
+                  <li class="text-sm text-slate-700 dark:text-slate-200 pl-3 border-l-2 border-green-400" x-text="p"></li>
+                </template>
+              </ul>
+            </div>
+
+            <!-- Pontos a melhorar -->
+            <div x-show="(roleplayFeedback.pontos_melhoria || []).length > 0">
+              <h4 class="font-semibold text-sm text-amber-700 dark:text-amber-400 mb-2">⚠️ Onde melhorar</h4>
+              <ul class="space-y-1.5">
+                <template x-for="p in roleplayFeedback.pontos_melhoria" :key="p">
+                  <li class="text-sm text-slate-700 dark:text-slate-200 pl-3 border-l-2 border-amber-400" x-text="p"></li>
+                </template>
+              </ul>
+            </div>
+
+            <!-- Aulas recomendadas -->
+            <div x-show="(roleplayFeedback.aulas_links || []).length > 0" class="border-t border-slate-200 dark:border-slate-700 pt-4">
+              <h4 class="font-semibold text-sm text-blue-700 dark:text-blue-400 mb-2">📚 Aulas que vao te ajudar a melhorar</h4>
+              <div class="space-y-2">
+                <template x-for="a in roleplayFeedback.aulas_links" :key="a.lesson_id">
+                  <a :href="a.course_url" target="_blank" class="block bg-slate-50 dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm transition">
+                    <div class="font-medium text-slate-800 dark:text-slate-100" x-text="a.course_title"></div>
+                    <div class="text-xs text-slate-600 dark:text-slate-400" x-text="a.lesson_title"></div>
+                  </a>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div class="mt-5 flex items-center justify-between gap-2">
+          <button @click="roleplayEtapa = 'escolher'; roleplayFeedback = null; roleplayConversa = [];" class="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">Tentar outro cenario</button>
+          <button @click="fecharRoleplay()" class="px-5 py-2 rounded-lg font-medium text-sm bg-purple-600 hover:bg-purple-700 text-white">Concluir</button>
+        </div>
+      </div>
+    </template>
+
   </div>
 </div>
 
@@ -856,6 +1084,12 @@ function app() {
     audioEl: null,     // HTMLAudioElement em uso
     audioCache: {},    // cache de blob URLs por chave
 
+    // Voz (Web Speech API)
+    vozSuportada: false,
+    vozReconhecendo: false,
+    vozRec: null,            // SpeechRecognition instance
+    vozAutoFalar: false,     // true = ao receber resposta do tutor, fala automaticamente
+
     // Selecao de cursos (tela entre onboarding e plano)
     cursosCandidatos: [],       // [{ id, title, summary, duration_minutes, ... }]
     cursosSelecionados: [],     // ids
@@ -866,8 +1100,28 @@ function app() {
     mostrarTrilhas: false,
     carregandoTrilhas: false,
 
+    // Modo escuro
+    darkMode: false,
+
     // Tela de progresso (dashboard da trilha)
     mostrarProgresso: false,
+
+    // Roleplay
+    mostrarRoleplay: false,
+    roleplayEtapa: 'escolher',   // escolher | simulando | feedback
+    roleplayCenarios: [
+      { icone: '👔', titulo: 'Apresentar para o CFO', desc: 'Defenda o ROI de implementar PDCA para o seu diretor financeiro cetico', cenario: 'Voce e o CFO da empresa, cetico sobre novos projetos de melhoria continua. O aluno vai apresentar PDCA e tentar te convencer a investir 6 meses do tempo da equipe. Pergunte por ROI, prazo, risco de execucao. Seja exigente mas justo.' },
+      { icone: '⚖️', titulo: 'Defesa em auditoria', desc: 'Justifique um planejamento tributario para um auditor da Receita', cenario: 'Voce e um auditor fiscal da Receita Federal, experiente e desconfiado. O aluno e um contador que vai defender que o planejamento tributario realizado foi legitimo. Faca perguntas tecnicas sobre fundamentos, jurisprudencia e historico da operacao.' },
+      { icone: '🤝', titulo: 'Cliente exigente', desc: 'Negocie prazo de entrega com um cliente que esta pressionando', cenario: 'Voce e um cliente importante da empresa, irritado porque um relatorio contabil esta atrasado 5 dias. O aluno (contador da empresa) vai negociar um novo prazo. Seja firme, exija comprometimento e explicacoes concretas, mas nao agressivo demais.' },
+      { icone: '📚', titulo: 'Treinamento interno', desc: 'Explique IFRS 16 para sua equipe pela primeira vez', cenario: 'Voce e um membro da equipe que nunca ouviu falar de IFRS 16, mas e curioso. Vai fazer perguntas basicas e algumas duvidas pertinentes sobre arrendamento mercantil. Demonstre interesse genuino mas pressione por exemplos praticos.' },
+    ],
+    roleplayAtivo: null,         // { titulo, cenario }
+    roleplayCenarioCustom: '',
+    roleplayConversa: [],        // [{ role: 'user'|'assistant', content }]
+    roleplayInput: '',
+    roleplayDigitando: false,
+    roleplayFeedback: null,      // { nota, resumo, pontos_fortes[], pontos_melhoria[], aulas_links[] }
+    roleplayCarregandoFeedback: false,
 
     // Nova sessao recorrente
     mostrarNovaSessao: false,
@@ -902,6 +1156,9 @@ function app() {
         const hist = localStorage.getItem('cefis_historico');
         if (hist) Object.assign(this.historico, JSON.parse(hist));
       } catch (e) { /* ignore */ }
+      try {
+        this.darkMode = localStorage.getItem('cefis_dark') === '1';
+      } catch (e) { /* ignore */ }
       // 2) persiste mudancas dali pra frente
       this.$watch('perfil', (v) => {
         try { localStorage.setItem('cefis_perfil', JSON.stringify(v)); } catch (e) {}
@@ -912,6 +1169,14 @@ function app() {
       this.$watch('historico', (v) => {
         try { localStorage.setItem('cefis_historico', JSON.stringify(v)); } catch (e) {}
       }, { deep: true });
+      this.$watch('darkMode', (v) => {
+        try {
+          localStorage.setItem('cefis_dark', v ? '1' : '0');
+          document.documentElement.classList.toggle('dark', v);
+        } catch (e) {}
+      });
+      // aplica estado inicial do dark mode na <html>
+      document.documentElement.classList.toggle('dark', this.darkMode);
 
       await Promise.all([this.checkStatus(), this.checkMe()]);
       this.statusTimer = setInterval(() => this.checkStatus(), 5000);
@@ -992,11 +1257,27 @@ function app() {
         this.status = await r.json();
         if (this.status.ready) {
           clearInterval(this.statusTimer);
-          if (this.tela === 'indexando') this.tela = 'onboarding';
+          if (this.tela === 'indexando') {
+            // Se ja tem historico, vai para welcome em vez do onboarding
+            this.tela = (this.historico.planos && this.historico.planos.length > 0)
+              ? 'welcome'
+              : 'onboarding';
+          }
         }
       } catch (e) {
         console.warn('status falhou', e);
       }
+    },
+
+    continuarUltimaSessao() {
+      // Se ja tem plano carregado em memoria, so vai pra tela do plano
+      if (this.plano && this.plano.length > 0) {
+        this.tela = 'plano';
+        return;
+      }
+      // Caso contrario, abre o modal de nova sessao no modo continuar
+      this.tela = 'plano';
+      this.abrirNovaSessao();
     },
 
     toggleArea(id) {
@@ -1466,6 +1747,13 @@ function app() {
           this.conversas[idxMsg].texto = '(Nenhum conteudo recebido. Veja o terminal do servidor para detalhes.)';
         }
         console.log('[chat] concluido:', totalTokens, 'tokens,', this.conversas[idxMsg].texto.length, 'chars');
+
+        // Se a pergunta veio por voz, fala a resposta automaticamente
+        if (this.vozAutoFalar && this.conversas[idxMsg].texto.length > 5) {
+          this.vozAutoFalar = false;
+          // pequeno delay para garantir que o texto terminou de chegar
+          setTimeout(() => this.ouvir('chat-' + idxMsg, this.conversas[idxMsg].texto), 300);
+        }
       } catch (e) {
         if (e.name === 'AbortError') {
           this.conversas[idxMsg].texto = '[timeout - servidor demorou mais de 60s para responder]';
@@ -1611,6 +1899,142 @@ function app() {
         console.error('[ouvir]', e);
         this.audioKey = null;
       }
+    },
+
+    // ============== ROLEPLAY ==============
+    abrirRoleplay() {
+      this.mostrarRoleplay = true;
+      this.roleplayEtapa = 'escolher';
+      this.roleplayAtivo = null;
+      this.roleplayCenarioCustom = '';
+      this.roleplayConversa = [];
+      this.roleplayInput = '';
+      this.roleplayFeedback = null;
+    },
+    fecharRoleplay() {
+      this.mostrarRoleplay = false;
+    },
+    iniciarRoleplayCenario(c) {
+      this.roleplayAtivo = { titulo: c.titulo, cenario: c.cenario };
+      this.roleplayEtapa = 'simulando';
+      this.roleplayConversa = [];
+      // primeira fala do personagem (gerada pela IA)
+      this.enviarRoleplay(true);
+    },
+    iniciarRoleplayCustom() {
+      const t = this.roleplayCenarioCustom.trim();
+      if (t.length < 20) return;
+      this.roleplayAtivo = { titulo: 'Cenario personalizado', cenario: t };
+      this.roleplayEtapa = 'simulando';
+      this.roleplayConversa = [];
+      this.enviarRoleplay(true);
+    },
+    async enviarRoleplay(isOpening = false) {
+      if (this.roleplayDigitando) return;
+      if (!isOpening) {
+        const txt = this.roleplayInput.trim();
+        if (!txt) return;
+        this.roleplayConversa.push({ role: 'user', content: txt });
+        this.roleplayInput = '';
+      } else {
+        // mensagem inicial vazia para a IA comecar como o personagem
+        this.roleplayConversa.push({ role: 'user', content: '(o aluno entrou na simulacao — inicie como o personagem com uma pergunta ou objecao curta)' });
+      }
+      this.roleplayDigitando = true;
+      this.roleplayConversa.push({ role: 'assistant', content: '' });
+      const idx = this.roleplayConversa.length - 1;
+      try {
+        const r = await fetch('/api/roleplay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cenario: this.roleplayAtivo.cenario,
+            mensagens: this.roleplayConversa.slice(0, -1),
+          }),
+        });
+        if (!r.ok || !r.body) throw new Error('servidor erro ' + r.status);
+        const reader = r.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let i;
+          while ((i = buffer.indexOf('\n\n')) >= 0) {
+            const block = buffer.slice(0, i);
+            buffer = buffer.slice(i + 2);
+            const ev = parseSSE(block);
+            if (!ev) continue;
+            if (ev.event === 'token') {
+              try {
+                const tok = JSON.parse(ev.data).t || '';
+                this.roleplayConversa[idx].content = this.roleplayConversa[idx].content + tok;
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {
+        this.roleplayConversa[idx].content = '[erro: ' + e.message + ']';
+      } finally {
+        this.roleplayDigitando = false;
+      }
+    },
+    async pedirFeedbackRoleplay() {
+      this.roleplayCarregandoFeedback = true;
+      this.roleplayEtapa = 'feedback';
+      try {
+        const r = await fetch('/api/roleplay/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cenario: this.roleplayAtivo.cenario,
+            mensagens: this.roleplayConversa.filter((m, i) => !(i === 0 && m.role === 'user' && m.content.startsWith('(o aluno entrou'))),
+          }),
+        });
+        if (!r.ok) throw new Error('erro ' + r.status);
+        this.roleplayFeedback = await r.json();
+      } catch (e) {
+        this.roleplayFeedback = { nota: null, resumo: 'Falha ao gerar feedback: ' + e.message, pontos_fortes: [], pontos_melhoria: [], aulas_links: [] };
+      } finally {
+        this.roleplayCarregandoFeedback = false;
+      }
+    },
+
+    // ============== VOZ (Web Speech API) ==============
+    iniciarVoz() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert('Seu navegador nao suporta reconhecimento de voz. Use Chrome ou Edge.');
+        return;
+      }
+      // Se ja esta reconhecendo, para
+      if (this.vozReconhecendo && this.vozRec) {
+        try { this.vozRec.stop(); } catch (e) {}
+        return;
+      }
+      const rec = new SR();
+      rec.lang = 'pt-BR';
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onstart = () => { this.vozReconhecendo = true; };
+      rec.onerror = (e) => {
+        console.warn('[voz] erro', e.error);
+        this.vozReconhecendo = false;
+      };
+      rec.onend = () => { this.vozReconhecendo = false; };
+      rec.onresult = (e) => {
+        const texto = e.results[0][0].transcript;
+        if (texto && texto.trim()) {
+          this.perguntaChat = texto.trim();
+          this.vozAutoFalar = true;  // sinaliza para falar a resposta automaticamente
+          // pequeno delay para o usuario ver o que foi reconhecido
+          setTimeout(() => this.enviarPergunta(), 200);
+        }
+      };
+      this.vozRec = rec;
+      try { rec.start(); } catch (e) { console.warn('[voz] start', e); }
     },
 
     // slugify identico ao do backend - para gerar URL da aula no quiz

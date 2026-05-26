@@ -178,6 +178,73 @@ async def t_chat() -> bool:
     return True
 
 
+async def t_roleplay() -> bool:
+    step("POST /api/roleplay + /api/roleplay/feedback (simulacao + avaliacao)")
+    cenario = (
+        "Voce e o CFO da empresa, cetico sobre projetos de melhoria. "
+        "O aluno vai apresentar PDCA e tentar te convencer. Faca perguntas duras sobre ROI."
+    )
+    mensagens = [
+        {"role": "user", "content": "(o aluno entrou — inicie como o personagem)"},
+    ]
+    # 1) roleplay stream — espera vir 1 resposta
+    t0 = time.monotonic()
+    chunks = 0
+    received = ""
+    timeout = httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as c:
+        async with c.stream("POST", f"{BASE}/api/roleplay", json={"cenario": cenario, "mensagens": mensagens}) as r:
+            if r.status_code != 200:
+                body = (await r.aread()).decode("utf-8", "replace")
+                fail(f"roleplay status={r.status_code} body={body[:200]}")
+                return False
+            buf = ""
+            async for piece in r.aiter_text():
+                buf += piece
+                while "\n\n" in buf:
+                    blk, buf = buf.split("\n\n", 1)
+                    ev = {"event": "message", "data": ""}
+                    for line in blk.split("\n"):
+                        if line.startswith("event:"):
+                            ev["event"] = line[6:].strip()
+                        elif line.startswith("data:"):
+                            ev["data"] += line[5:].strip()
+                    if ev["event"] == "token" and ev["data"]:
+                        try:
+                            received += json.loads(ev["data"]).get("t", "")
+                            chunks += 1
+                        except Exception:
+                            pass
+    dt = time.monotonic() - t0
+    if len(received) < 10:
+        fail(f"roleplay resposta muito curta: '{received}'")
+        return False
+    print(f"     personagem disse ({len(received)} chars): {received[:100]}...")
+    ok(f"roleplay stream: {chunks} tokens em {dt:.1f}s")
+
+    # 2) feedback
+    mensagens.append({"role": "assistant", "content": received})
+    mensagens.append({"role": "user", "content": "PDCA traz reducao de custos de 15% em 6 meses, com base nesse case da industria automotiva..."})
+    mensagens.append({"role": "assistant", "content": "(simulado) E como vai garantir engajamento?"})
+    mensagens.append({"role": "user", "content": "Vou treinar 3 lideres internos como facilitadores."})
+    t1 = time.monotonic()
+    async with httpx.AsyncClient(timeout=60.0) as c:
+        r = await c.post(f"{BASE}/api/roleplay/feedback", json={"cenario": cenario, "mensagens": mensagens})
+    if r.status_code != 200:
+        fail(f"feedback status={r.status_code} body={r.text[:200]}")
+        return False
+    fb = r.json()
+    if not isinstance(fb.get("nota"), int):
+        fail(f"feedback sem nota: {fb}")
+        return False
+    if not isinstance(fb.get("pontos_fortes"), list) or not isinstance(fb.get("pontos_melhoria"), list):
+        fail(f"feedback estrutura invalida: {list(fb.keys())}")
+        return False
+    ok(f"feedback nota={fb['nota']} em {time.monotonic()-t1:.1f}s")
+    print(f"     fortes: {len(fb.get('pontos_fortes',[]))} | melhoria: {len(fb.get('pontos_melhoria',[]))} | aulas: {len(fb.get('aulas_links',[]))}")
+    return True
+
+
 async def t_cefis_tracks() -> bool:
     step("GET /api/cefis-tracks (trilhas oficiais CEFIS via API real)")
     t0 = time.monotonic()
@@ -399,6 +466,9 @@ async def main() -> int:
 
     # integracao com API CEFIS (trilhas oficiais)
     results["cefis_tracks"] = await t_cefis_tracks()
+
+    # roleplay (simulacao + feedback)
+    results["roleplay"] = await t_roleplay()
 
     # valida que resumos do plano vieram com related_lessons
     if onb:

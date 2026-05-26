@@ -2,11 +2,11 @@
 
 Tutor de aprendizado personalizado feito para o **Hackathon de Inovação em Aprendizado da CEFIS** (26/05/2026).
 
-Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando o catálogo real, chat de dúvidas com RAG sobre as transcrições das aulas, quiz por aula, áudio em todo conteúdo gerado pela IA, trilha evolutiva multi-fase, histórico cumulativo e dashboard de progresso.
+Onboarding curto, diagnóstico de lacunas, plano cronometrado usando o catálogo real, chat de dúvidas com RAG sobre as transcrições das aulas, quiz por aula, áudio em todo conteúdo gerado pela IA, trilha evolutiva multi-fase, dashboard de progresso, welcome screen com retomada inteligente, **chat por voz hands-free** e **roleplay aplicado** ("pratique apresentar PDCA para o seu CFO cético").
 
 🌐 **Acesse:** [https://tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org)
 
-**Status:** ✅ 9/9 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless. Deploy público em Windows Server com IIS + Let's Encrypt.
+**Status:** ✅ 10/10 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless. Deploy público em Windows Server com IIS + Let's Encrypt.
 
 ---
 
@@ -28,12 +28,16 @@ Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando 
 
 > Diferenciais que **a maioria dos times não vai ter** e que cobrem os critérios mais valiosos do briefing (Funcionalidade 30pt + Integração CEFIS 25pt + Qualidade IA 20pt = 75% da nota).
 
-1. **RAG profundo nas transcrições reais** — não busca por keyword na ementa. Indexei as **7.447 transcrições VTT** em **34.422 chunks vetoriais** (sqlite-vec, 1536 dims). O chat cita **curso + aula + segundo exato** onde aquela informação foi falada.
-2. **Catálogo 100% local + 5 endpoints da API CEFIS conectados** — login, perfil, certificados, **trilhas oficiais** (`/tracks`) e **progresso por aula em tempo real** (`/courses/:id/lessons`). Sem rate-limit, sem latência de API no caminho crítico.
-3. **Modelo de sessão recorrente "tenho X min agora"** — exatamente como o CEO da live descreveu ("15 min no ônibus, capitalize esse tempo"). Botão **Nova sessão** sempre visível, pergunta tempo atual, escolhe continuar mesmo objetivo ou trocar de tema. Histórico cumulativo garante zero repetição.
-4. **Quiz dinâmico por aula** — 5 perguntas geradas em runtime da transcrição da aula específica, mix de dificuldade, feedback imediato, explicação justificada no conteúdo real.
-5. **Áudio (TTS) em todo conteúdo gerado pela IA** — botão 🔊 no diagnóstico, resumos, chat e quiz. Atende "múltiplos formatos" + estilo de aprendizagem auditivo.
-6. **Dashboard "Meu progresso"** — cards de stats, plano atual com %, sessões anteriores, quizzes recentes, distribuição por área. Tudo do `localStorage`, atualiza sozinho.
+1. **🎭 "Pratique com o tutor" (roleplay aplicado)** — único no mercado. Aluno escolhe um cenário real (apresentar pro CFO, defender em auditoria, negociar com cliente), o tutor **interpreta o personagem** e faz perguntas duras. Após 4-6 trocas, recebe **feedback estruturado** com nota, pontos fortes, pontos a melhorar e aulas CEFIS relacionadas. **Aprendizado ativo** (Feynman) vs passivo.
+2. **🎤 Chat por voz hands-free** — Web Speech API + TTS. Fala "O que é PDCA?" → o tutor responde **em voz alta**. Atende o cenário "15 min no ônibus" da live literalmente.
+3. **RAG profundo nas transcrições reais** — 7.447 transcrições VTT em **34.422 chunks vetoriais** (sqlite-vec, 1536 dims). O chat cita **curso + aula + segundo exato** onde aquela informação foi falada.
+4. **Catálogo 100% local + 5 endpoints da API CEFIS conectados** — login, perfil, certificados, **trilhas oficiais** (`/tracks`) e **progresso por aula em tempo real** (`/courses/:id/lessons`).
+5. **Sessão recorrente "tenho X min agora"** — Botão **Nova sessão** sempre visível, pergunta tempo atual, escolhe continuar mesmo objetivo ou trocar de tema. Histórico cumulativo garante zero repetição.
+6. **Welcome screen com retomada inteligente** — quando o aluno volta, é recebido por nome, vê stats e botão "▶ Continuar sessão atual". Materializa "o tutor que te conhece" em 1 segundo.
+7. **Quiz dinâmico por aula** — 5 perguntas geradas da transcrição da aula específica, feedback imediato.
+8. **Áudio TTS em todo conteúdo gerado** — botão 🔊 no diagnóstico, resumos, chat e explicações do quiz.
+9. **Dashboard "Meu progresso"** — cards de stats, plano atual com %, sessões anteriores, quizzes recentes, distribuição por área.
+10. **Modo escuro** com toggle persistente.
 
 Bônus arquiteturais:
 
@@ -64,6 +68,19 @@ Bônus arquiteturais:
   </tr>
   <tr>
     <td colspan="2"><b>Meu progresso (dashboard da trilha)</b><br/>Cards de stats agregados, plano atual com barra, distribuição por área, histórico das últimas sessões e quizzes recentes com nota colorida. Tudo lido do <code>localStorage</code> — sem chamada de backend.<br/><br/><img src="Docs/screenshots/08-meu-progresso.png" alt="Meu progresso"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>👋 Welcome screen — retomada inteligente</b><br/>Quando o aluno volta no app, em vez de cair no onboarding cai aqui: nome próprio, badge de fase, último plano, progresso agregado e botão grande "▶ Continuar sessão atual". Materializa "o tutor que te conhece" em 1 segundo de demo.<br/><br/><img src="Docs/screenshots/09-welcome.png" alt="Welcome screen"/></td>
+  </tr>
+  <tr>
+    <td><b>🎭 Pratique — escolha do cenário</b><br/>4 cenários reais prontos (CFO cético, auditoria, cliente exigente, treinamento interno) + opção de descrever cenário próprio. Aluno escolhe e a IA assume o personagem.<br/><br/><img src="Docs/screenshots/10-roleplay-cenarios.png" alt="Roleplay cenários"/></td>
+    <td><b>🎭 Simulação em andamento</b><br/>IA fala como o personagem (CFO cético no exemplo), faz objeções concretas, mantém pressão. Aluno responde por texto ou voz. Botão "🎯 Encerrar e ver feedback" libera após 2 trocas.<br/><br/><img src="Docs/screenshots/11-roleplay-simulacao.png" alt="Roleplay simulação"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>🎭 Feedback estruturado do roleplay</b><br/>Nota 0-10 com cor por faixa, resumo geral em 1 frase, pontos fortes + pontos a melhorar, e <b>3 aulas reais do catálogo CEFIS</b> linkadas para o aluno aprofundar onde ficou fraco. Aprendizado ativo + retorno para o material original.<br/><br/><img src="Docs/screenshots/12-roleplay-feedback.png" alt="Roleplay feedback"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>🌙 Modo escuro + 🎤 microfone</b><br/>Toggle sol/lua no header, persiste em localStorage. Botão de microfone ao lado do input do chat: Web Speech API capta voz, envia automático e a resposta toca em áudio (TTS). Hands-free total.<br/><br/><img src="Docs/screenshots/13-dark-mode.png" alt="Modo escuro com microfone"/></td>
   </tr>
 </table>
 

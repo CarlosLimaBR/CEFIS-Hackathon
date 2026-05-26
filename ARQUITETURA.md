@@ -143,7 +143,7 @@ Limite conhecido: ruim para multi-instância (sem replicação). Para hackathon 
 
 ---
 
-## Endpoints (18 rotas)
+## Endpoints (20 rotas)
 
 ### Públicos (não precisam de auth)
 
@@ -157,6 +157,8 @@ Limite conhecido: ruim para multi-instância (sem replicação). Para hackathon 
 | `POST` | `/api/courses/search` | Lista cursos candidatos por similaridade |
 | `POST` | `/api/chat` | Chat com RAG (SSE streaming) |
 | `POST` | `/api/quiz/{lesson_id}` | Gera quiz de 5 perguntas da aula |
+| `POST` | `/api/roleplay` | Simulação roleplay (SSE) — IA interpreta personagem |
+| `POST` | `/api/roleplay/feedback` | Avaliação estruturada da simulação + aulas linkadas |
 | `POST` | `/api/tts` | Texto → MP3 (streaming) |
 | `GET` | `/api/cefis-tracks` | Trilhas oficiais (proxy GET /tracks da CEFIS) |
 | `GET` | `/api/cefis-tracks/{id}` | Detalhe + course_ids de uma trilha CEFIS |
@@ -181,6 +183,8 @@ Todos os prompts vivem em [`app/prompts.py`](app/prompts.py) — fácil de revis
 | `PLAN_SYSTEM` | `gpt-4o-mini` (JSON) | Sequência de aulas + resumos respeitando tempo | Onboarding |
 | `CHAT_SYSTEM` | `gpt-4o-mini` (streaming) | Resposta com RAG e citação | Chat |
 | `QUIZ_SYSTEM` | `gpt-4o-mini` (JSON) | 5 perguntas múltipla escolha + explicação | Quiz |
+| `ROLEPLAY_SYSTEM` | `gpt-4o-mini` (streaming, temp 0.8) | IA interpreta personagem do cenário | Roleplay |
+| `ROLEPLAY_FEEDBACK_SYSTEM` | `gpt-4o-mini` (JSON) | Avaliação da simulação com nota/pontos/aulas | Roleplay |
 
 **Regras anti-alucinação** (em todos os prompts):
 - "Responda apenas em json válido seguindo o schema"
@@ -247,18 +251,19 @@ Watchers Alpine: `$watch('perfil', ...)` e `$watch('historico', ...)` salvam aut
 
 ## Testes E2E
 
-`scripts/test_endpoints.py` — 9 testes que batem direto nos endpoints HTTP:
+`scripts/test_endpoints.py` — 10 testes que batem direto nos endpoints HTTP:
 
 ```
-1. /api/status                  — índice pronto
-2. /api/onboarding              — gera diagnóstico + plano
-3. /api/chat (SSE)              — streaming + fontes
-4. /api/tts                     — MP3 binário
-5. /api/quiz/{id}               — 5 perguntas estruturadas
-6. /api/courses/search          — top-K cursos
-7. /api/onboarding multi-fase   — exclui aulas já vistas
-8. /api/cefis-tracks            — trilhas via API real
-9. resumos_com_ref              — related_lessons em todos resumos
+ 1. /api/status                  — índice pronto
+ 2. /api/onboarding              — gera diagnóstico + plano
+ 3. /api/chat (SSE)              — streaming + fontes
+ 4. /api/tts                     — MP3 binário
+ 5. /api/quiz/{id}               — 5 perguntas estruturadas
+ 6. /api/courses/search          — top-K cursos
+ 7. /api/onboarding multi-fase   — exclui aulas já vistas
+ 8. /api/cefis-tracks            — trilhas via API real
+ 9. /api/roleplay + feedback     — simulação + avaliação estruturada
+10. resumos_com_ref              — related_lessons em todos resumos
 ```
 
 Rodar contra local:

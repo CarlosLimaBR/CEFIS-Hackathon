@@ -4,12 +4,11 @@ Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Stack em uma linha
+## Stack
 
-**Python 3.11 + FastAPI + SQLite (sqlite-vec) + OpenAI** no backend.
-**HTML + Tailwind CDN + Alpine.js** no frontend — **zero build**.
-
-Deploy: Windows Server + IIS (URL Rewrite + ARR) + nssm + Let's Encrypt.
+- **Backend:** Python 3.11 + FastAPI + SQLite com sqlite-vec + OpenAI
+- **Frontend:** HTML + Tailwind via CDN + Alpine.js (sem etapa de build)
+- **Deploy:** Windows Server + IIS (URL Rewrite + ARR) + nssm + Let's Encrypt
 
 ---
 
@@ -276,7 +275,7 @@ Rodar contra produção:
 .venv\Scripts\python.exe scripts\test_endpoints.py https://tutor-cefis.duckdns.org
 ```
 
-Validação manual no browser também foi feita via **Playwright headless** — abre Chrome real, percorre onboarding → plano → chat, captura DOM e valida que a resposta renderiza (incluindo correção de bug de reatividade Alpine).
+Validação manual no browser foi feita via Playwright headless: abre Chrome real, percorre onboarding, plano e chat, captura o DOM e valida que a resposta renderiza corretamente.
 
 ---
 

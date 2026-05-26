@@ -36,15 +36,15 @@ O catálogo completo foi indexado: 476 cursos, 12.172 aulas, 7.447 transcriçõe
 
 ### Tutor contextual
 
-A "Mensagem do tutor" (substituta do diagnóstico genérico) cita nominalmente o que o aluno já dominou em 2-3 frases, explica o que esta sessão entrega e fecha com motivação profissional. Toca em áudio automaticamente ao abrir a sessão — o aluno é recebido pelo tutor falando.
+A "Mensagem do tutor" cita nominalmente o que o aluno já dominou em 2-3 frases, explica o que esta sessão entrega e fecha com uma frase conectando ao objetivo profissional declarado. O áudio toca automaticamente ao abrir a sessão.
 
 ### Trajetória de Mestria
 
-Um conceito só é marcado como dominado quando o aluno conclui a aula **e** acerta ≥80% no quiz da mesma aula. Métrica de retenção real. Sem streak, sem ranking social, sem mascote — gamificação profissional para adultos. Insights automáticos baseados em dados próprios: "Você acerta 95% à noite", "+275% vs sua média semanal", "Taxa de retenção validada: 33%".
+Um conceito é marcado como dominado quando o aluno conclui a aula **e** acerta ≥80% no quiz da mesma aula. A métrica representa retenção observada, não presença. Insights automáticos baseados nos dados do próprio aluno: período do dia com melhor taxa de acerto, comparativo com a média semanal, taxa de retenção validada.
 
 ### Chat por voz hands-free
 
-Web Speech API capta a pergunta em português, envia automaticamente e a resposta toca em voz alta via TTS. Aplicado ao cenário descrito pelo CEO na live: 15 minutos no ônibus, no carro.
+Web Speech API capta a pergunta em português, envia automaticamente e a resposta toca em voz alta via TTS. Permite uso do tutor sem mãos livres em contextos como ônibus, carro ou rotinas de exercício.
 
 ### Sessão recorrente "tenho X minutos agora"
 

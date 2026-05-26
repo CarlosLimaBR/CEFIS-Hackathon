@@ -1,14 +1,14 @@
 # Próximas funcionalidades
 
-Roadmap pós-hackathon, organizado por **prazo + impacto**. Pensa o tutor como produto vivo, não só MVP.
+Roadmap pós-hackathon, organizado por prazo e impacto. O documento serve como registro do que ainda faz sentido evoluir, assumindo o estado atual como base.
 
 > Estado atual: backend FastAPI (20 rotas), 10/10 testes E2E, deploy em [tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org). Veja [README.md](README.md) e [ARQUITETURA.md](ARQUITETURA.md).
 
 ---
 
-## ✅ Já implementado (até 26/05/2026)
+## Já implementado (até 26/05/2026)
 
-Snapshot do que ficou pronto no hackathon e foi entregue à banca:
+Snapshot do que ficou pronto no hackathon:
 
 ### Núcleo
 - **Onboarding** em 3 passos + seleção manual de cursos candidatos
@@ -20,19 +20,19 @@ Snapshot do que ficou pronto no hackathon e foi entregue à banca:
 - **Loading dinâmico** com 12 etapas em pool + 12 dicas rotativas das features
 
 ### Interação
-- **Chat com RAG profundo** em 34.422 chunks vetoriais, citando curso/aula/segundo
-- **Áudio TTS** em todo conteúdo gerado pela IA (botão 🔊)
-- **Autoplay** da mensagem do tutor ao iniciar sessão (efeito "tutor te recebe falando")
-- **Chat por voz** hands-free (Web Speech API + auto-TTS na resposta)
+- **Chat com RAG** em 34.422 chunks vetoriais, citando curso/aula/segundo
+- **Áudio TTS** em todo conteúdo gerado pela IA
+- **Autoplay** da mensagem do tutor ao iniciar a sessão
+- **Chat por voz** com Web Speech API e resposta automática em áudio
 - **Roleplay** ("Pratique com o tutor"): IA interpreta personagem, feedback estruturado com nota e aulas recomendadas
 - **Voz no roleplay** com TTS automático do personagem
 - **Quiz dinâmico** gerado da transcrição real da aula clicada
 
-### Gamificação profissional
-- **Trajetória de Mestria**: conceitos dominados = aula concluída + quiz ≥80%
-- **Toast discreto** ao dominar novo conceito (sem confetti, sem dark patterns)
-- **Insights automáticos**: sessões esta semana vs média, melhor período do dia (manhã/tarde/noite), taxa de retenção, conceitos novos
-- **Sem streak agressivo, sem ranking social** — design para profissionais adultos
+### Gamificação
+- **Trajetória de Mestria**: conceito marcado como dominado quando o aluno conclui a aula e acerta ≥80% no quiz
+- **Toast discreto** ao dominar novo conceito
+- **Insights automáticos**: sessões na semana vs média, melhor período do dia para acerto em quiz, taxa de retenção, conceitos dominados na semana
+- Sem streak diário, sem ranking entre alunos — comparativos restritos aos próprios dados do usuário
 
 ### Personalização e trilha
 - **Histórico cumulativo** em localStorage (aulas, quizzes com nota, cursos, planos, conceitos)
@@ -62,58 +62,58 @@ Snapshot do que ficou pronto no hackathon e foi entregue à banca:
 
 ---
 
-## ⚡ Quick wins (1-2 semanas cada)
+## Curto prazo (1-2 semanas cada)
 
-Coisas que **ainda cabem** na arquitetura atual sem refatorar.
+Itens que cabem na arquitetura atual sem refatoração relevante.
 
-| Feature | Por quê | Esforço |
+| Item | Descrição | Esforço |
 |---|---|---|
-| **Spaced repetition no quiz** (Anki-style) | Aluno revisa o que errou há 1/3/7/14 dias. Multiplica retenção sem custo extra de LLM | Médio |
-| **Ritmo voluntário** (Fase 2 da gamificação) | Aluno define ritmo desejado (1-2x/sem, 2-3x/sem...) e vê comparativo sem pressão. Modo férias incluso. | Baixo (1h) |
-| **Marcas com certificado PDF** (Fase 4 da gamificação) | "Você concluiu IFRS 16 — baixe certificado + compartilhe no LinkedIn". `jspdf` via CDN | Médio (2h) |
-| **Marcar aula concluída pelo chat** | "Já assisti essa aula" → tutor entende e marca via function calling do LLM | Baixo |
-| **Anotações por aula** | Textarea livre por `lesson_id` persistida em localStorage. "Meu caderno" agregado | Baixo |
-| **Compartilhar plano por link** | URL com payload do plano em base64. "Olha o que estou estudando" | Baixo |
-| **PWA installable** | `manifest.json` + service worker leve. Vira "app" no celular | Baixo |
-| **Resumo em PDF para download** | Plano + diagnóstico + resumos da IA em um PDF | Médio |
+| **Spaced repetition no quiz** | Aluno revisa perguntas erradas em 1/3/7/14 dias. Aplicação do algoritmo SM-2 sobre o histórico de quizzes | Médio |
+| **Ritmo voluntário** | Aluno define ritmo desejado (1-2x/sem, 2-3x/sem, diário) e vê comparativo no Meu Progresso. Inclui modo pausa | Baixo |
+| **Marcos com certificado PDF** | Ao atingir critérios (ex: trilha concluída), oferece download de PDF + compartilhamento no LinkedIn (`jspdf` via CDN) | Médio |
+| **Marcar aula concluída pelo chat** | Function calling do LLM detecta intenção e marca como concluída | Baixo |
+| **Anotações por aula** | Textarea livre por `lesson_id` persistida em localStorage; visão agregada em "Meu caderno" | Baixo |
+| **Compartilhar plano por link** | URL com payload do plano em base64 para envio a terceiros | Baixo |
+| **PWA installable** | `manifest.json` + service worker para instalação no celular | Baixo |
+| **Resumo em PDF para download** | Plano + mensagem do tutor + resumos da IA exportados em PDF | Médio |
 | **Atalhos de teclado** | J/K navega plano, Enter abre, `?` ajuda, `/` foca chat | Trivial |
 
 ---
 
-## 🎯 Médio prazo (1-3 meses)
+## Médio prazo (1-3 meses)
 
-### Personalização adaptativa real
+### Personalização adaptativa
 
-- **Detecção do estilo de aprendizagem por comportamento**: se o aluno consome mais áudio que texto, prioriza TTS. Se faz muitos quizzes, prioriza prática. Sem auto-declaração — observa.
-- **Ajuste de dificuldade do quiz** com base no histórico de acertos por tópico
-- **Recomendação colaborativa**: "alunos com objetivo parecido também fizeram X"
-- **Memória persistente do tutor** (mem0 / Letta-style): lembra "você me disse semana passada que tem dificuldade com IFRS"
+- **Detecção do estilo de aprendizagem por comportamento**: observação de consumo (áudio vs texto vs prática) ajusta a recomendação de conteúdo sem auto-declaração
+- **Ajuste dinâmico de dificuldade do quiz** com base no histórico de acertos por tópico
+- **Recomendação colaborativa**: agrupa alunos por similaridade de objetivo e sugere conteúdo bem avaliado por pares
+- **Memória persistente do tutor** (mem0 / Letta-style): retém preferências e dificuldades entre sessões
 
 ### Conteúdo gerado expandido
 
-- **Flashcards gerados** com revisão espaçada (cards extraídos das transcrições)
-- **Podcast diário personalizado** — 5 min de áudio resumindo o que o aluno deveria saber hoje
-- **Avaliação dissertativa** — aluno responde por extenso, IA dá nota e feedback (vs múltipla escolha atual)
-- **Modo "explique como se..."** — slider iniciante↔expert ajusta complexidade da resposta no chat
+- **Flashcards** com revisão espaçada (cards extraídos das transcrições)
+- **Podcast diário personalizado**: 5 min de áudio gerado da noite anterior com o conteúdo do dia
+- **Avaliação dissertativa**: aluno responde por extenso, IA aplica rubrica e retorna nota + feedback
+- **Slider de profundidade**: ajusta a complexidade da resposta no chat entre iniciante e especialista
 
 ### Integração CEFIS aprofundada
 
-- **Sincronizar progresso bidirecional** — marcar aula no tutor reflete na conta CEFIS
-- **Inscrição automática** em curso pelo tutor (botão "matricular")
-- **Trilhas próprias do aluno** — salvar combinação personalizada como trilha reusável
-- **Emissão automática de certificado** quando aluno completa critério
-- **Importar planos de RH** — empresa cria trilha obrigatória, aluno acessa via login corporativo
+- **Sincronização de progresso bidirecional**: marcar aula no tutor reflete na conta CEFIS
+- **Inscrição automática** em curso a partir do tutor
+- **Trilhas próprias do aluno** salvas e reutilizáveis
+- **Emissão automática de certificado** ao completar critério
+- **Trilhas corporativas**: empresas configuram trilha obrigatória, aluno acessa via login corporativo
 
 ---
 
-## 🚀 Longo prazo (3-12 meses)
+## Longo prazo (3-12 meses)
 
 ### IA agente
 
-- **Agente proativo**: detecta que o aluno está parado há N dias e oferece sessão curta
-- **Tutor multi-agente**: diagnosticador + explicador (RAG) + examinador (quiz) + motivador. Orchestrator escolhe quem fala
-- **Geração de conteúdo quando o catálogo não cobre**: tutor cria uma "aula CEFIS-style" totalmente nova com vídeo TTS + slides
-- **Análise dissertativa profunda** com rubrica configurável pelo professor
+- **Agente proativo**: detecta inatividade prolongada e propõe sessão curta
+- **Tutor multi-agente**: diagnosticador, explicador (RAG), examinador (quiz) e motivador coordenados por orquestrador
+- **Geração de aula nova** quando o catálogo não cobre o assunto: vídeo TTS + slides gerados pela IA
+- **Avaliação dissertativa profunda** com rubrica configurável pelo professor
 
 ### Comunidade
 
@@ -139,45 +139,45 @@ Coisas que **ainda cabem** na arquitetura atual sem refatorar.
 
 ---
 
-## 📊 Acessibilidade & UX
+## Acessibilidade e UX
 
-- Internacionalização (PT-BR / EN / ES)
+- Internacionalização (PT-BR, EN, ES)
 - WCAG AA: leitor de tela, alto contraste, navegação por teclado completa
-- Modo offline parcial: download de aulas + transcrições para o celular
+- Modo offline parcial: download de aulas e transcrições para o celular
 - Tema customizável (escuro, sépia, alto contraste)
 
 ---
 
-## 🔒 Segurança & privacidade
+## Segurança e privacidade
 
-- Rate limit por IP/usuário
-- Sanitização de input nos prompts (proteção contra prompt injection)
+- Rate limit por IP e por usuário
+- Sanitização de input nos prompts contra prompt injection
 - Cifra de cookies de sessão CEFIS no servidor
-- LGPD: política de privacidade, opt-in para uso de dados de progresso para recomendação colaborativa
-- Auditoria de chamadas à API CEFIS (timestamps + IPs)
+- LGPD: política de privacidade e opt-in para uso de dados de progresso em recomendação colaborativa
+- Auditoria de chamadas à API CEFIS (timestamps e IPs)
 
 ---
 
-## 💡 Ideias mais ousadas
+## Exploratórias
 
-- **"Pergunte ao professor da aula"**: clonar voz e estilo do professor (com permissão) e responder no chat como se fosse ele
+- **"Pergunte ao professor da aula"**: voz e estilo do professor (com autorização) usados como persona do chat
 - **Simulação de prova CRC** com timer, questões oficiais e relatório de prontidão
-- **Tutoria peer guiada por IA**: o tutor identifica dois alunos no mesmo tema e sugere conversa
-- **Recomendação preditiva**: "Em 2 semanas vai sair uma nova legislação X — comece a estudar essa aula"
-- **Modo apresentação**: aluno termina trilha → IA gera slides para apresentar pra equipe na empresa
+- **Tutoria entre pares guiada por IA**: identifica alunos no mesmo tema e sugere troca
+- **Recomendação preditiva**: novas legislações ou mudanças no setor disparam sugestões de estudo antecipado
+- **Modo apresentação**: aluno termina trilha e a IA gera slides para apresentar à equipe
 
 ---
 
-## Filosofia de design (resumo do que aprendemos)
+## Princípios de design adotados
 
-- **Mestria mensurável** > XP abstrato
-- **Auto-comparação** > ranking social
-- **Insights úteis** > notificações de pressão
-- **Linguagem profissional** > gamificação infantil
-- **Recompensa funcional** (desbloqueio de conteúdo avançado) > cosmética
-- **Tutor que reconhece o aluno** > diagnóstico genérico
+- Mestria mensurável em vez de pontos abstratos
+- Auto-comparação em vez de ranking social
+- Insights úteis em vez de notificações de pressão
+- Linguagem adulta e profissional nos textos da interface
+- Recompensa funcional (desbloqueio de conteúdo) em vez de cosmética
+- Tutor que reconhece o aluno em vez de diagnóstico genérico
 
-Esses princípios guiam as próximas features.
+Esses princípios orientam as próximas decisões de produto.
 
 ---
 

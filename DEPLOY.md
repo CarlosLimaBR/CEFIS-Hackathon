@@ -1,24 +1,24 @@
 # Deploy no servidor Windows 192.169.179.16
 
-Guia direto. Tempo total estimado: **40-50 minutos**, sendo ~25 min só de indexação rodando.
+Guia operacional. Tempo total estimado: 40 a 50 minutos, dos quais cerca de 25 minutos correspondem à indexação rodando em background.
 
-> Você já tem: Python 3.11+, IIS com URL Rewrite + ARR, `web.config` na pasta `C:\TutorCEFIS` apontando para `localhost:8000`.
+> Pré-condições: Python 3.11+, IIS com URL Rewrite e ARR habilitados, `web.config` em `C:\TutorCEFIS` configurado como reverse proxy para `localhost:8000`.
 
 ---
 
-## ✅ Checklist rápido
+## Checklist
 
 ```
 [ ] 1. Instalar nssm.exe (5 min)
-[ ] 2. Instalar Git para Windows (5 min, ou pular usando ZIP)
-[ ] 3. Clonar o repo em C:\TutorCEFIS (2 min)
+[ ] 2. Instalar Git para Windows (5 min) ou usar Download ZIP
+[ ] 3. Clonar o repositório em C:\TutorCEFIS (2 min)
 [ ] 4. Extrair Docs\courses.zip (1 min)
-[ ] 5. Criar venv + instalar deps (3 min)
-[ ] 6. Criar .env com nova OPENAI_API_KEY (2 min)
-[ ] 7. Rodar indexar.bat (~25 min, ~$0.17)
-[ ] 8. Testar local (curl localhost:8000) (1 min)
-[ ] 9. Instalar como serviço com instalar-servico.bat (1 min)
-[ ] 10. Validar pelo IIS (https://192.169.179.16) (1 min)
+[ ] 5. Criar venv e instalar dependências (3 min)
+[ ] 6. Criar .env com OPENAI_API_KEY válida (2 min)
+[ ] 7. Rodar indexar.bat (~25 min, custo ~$0.17 em embeddings)
+[ ] 8. Testar localmente com curl em localhost:8000 (1 min)
+[ ] 9. Instalar como serviço Windows via instalar-servico.bat (1 min)
+[ ] 10. Validar acesso pelo IIS em https://192.169.179.16 (1 min)
 ```
 
 ---

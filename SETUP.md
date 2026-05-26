@@ -1,8 +1,8 @@
 # Setup local (Windows)
 
-Como rodar o Tutor IA CEFIS na sua máquina para desenvolver, testar ou apresentar a demo offline.
+Como rodar o Tutor IA CEFIS na máquina local para desenvolvimento, teste ou demonstração offline.
 
-> 🚀 **Para deploy em servidor**, veja [DEPLOY.md](DEPLOY.md).
+> Para deploy em servidor, consulte [DEPLOY.md](DEPLOY.md).
 
 ---
 
@@ -148,7 +148,7 @@ Com o servidor rodando em http://localhost:8000:
 
 Esperado:
 ```
-9/9 testes passaram
+10/10 testes passaram
   OK  status
   OK  onboarding
   OK  chat
@@ -157,6 +157,7 @@ Esperado:
   OK  courses_search
   OK  multi_fase
   OK  cefis_tracks
+  OK  roleplay
   OK  resumos_com_ref
 ```
 

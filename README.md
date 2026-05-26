@@ -12,8 +12,76 @@ Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando 
 - **Diagnóstico de lacunas** — IA cruza o objetivo com o catálogo CEFIS e descreve o gap do aluno.
 - **Plano de estudos** — sequência ordenada de aulas reais + resumos da IA, respeitando o tempo declarado.
 - **Chat com RAG** — perguntas livres respondidas com base no texto das aulas, citando curso/aula/segundo.
+- **Quiz por aula** — botão "Testar" em cada aula gera 5 perguntas múltipla escolha a partir da transcrição real.
 
 Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estático com Tailwind via CDN e Alpine.js (zero build).
+
+---
+
+## Atendimento aos requisitos do hackathon
+
+### Entrega mínima obrigatória (briefing §4.1)
+
+| Requisito | Como entregamos | Onde no código | Status |
+|---|---|---|---|
+| **Onboarding** — coleta perfil, objetivos, experiência e nível | Wizard de 3 passos com nome, áreas (7), objetivo livre, nível (3 níveis) e tempo (10min–40h) | [app/static/index.html](app/static/index.html) (telas 1–3) | ✅ |
+| **Diagnóstico de lacunas** — identifica o que falta para o objetivo | Prompt `DIAGNOSIS_SYSTEM` cruza objetivo + nível com top-N cursos por similaridade vetorial. Saída JSON com `diagnosis` + lista de tópicos | [app/prompts.py:1](app/prompts.py:1) + [app/main.py:124](app/main.py:124) | ✅ |
+| **Plano de estudos** — combina catálogo CEFIS + IA, respeita tempo | Prompt `PLAN_SYSTEM` monta sequência de itens `aula` (real) ou `resumo` (IA), regra de duração ≤ tempo +10%. Cada item linka para `cefis.com.br/curso/{slug}/{id}` | [app/prompts.py:39](app/prompts.py:39) + [app/main.py:170](app/main.py:170) | ✅ |
+
+### Diferenciais valorizados (briefing §4.2)
+
+| Diferencial | Como entregamos | Status |
+|---|---|---|
+| **Geração de conteúdo original** | Resumos da IA inseridos no plano quando o catálogo não cobre; quiz com 5 perguntas geradas da transcrição real (4 alternativas + gabarito + explicação) | ✅ |
+| **Interação de dúvidas com material real** | Chat com SSE streaming. RAG sobre **34.422 chunks** vetoriais das transcrições; cita **curso, aula e segundo** de origem | ✅ |
+| **Acompanhamento contínuo** | Checkbox "concluído" em cada item do plano + quiz por aula para validar retenção | ✅ |
+| **Interface bem projetada** | Wizard com progresso animado, branding CEFIS (logos oficiais), responsivo, perfil persiste em `localStorage` (sobrevive refresh) | ✅ |
+| **Múltiplos formatos** | Texto + chat conversacional + quiz interativo | ⚠️ parcial (sem áudio/podcast) |
+| **Adaptação ao estilo de aprendizagem** (visual/auditivo/cinestésico) | Não implementado — exige instrumento validado, alto risco em 1 dia | ❌ corte consciente |
+
+### Critérios de avaliação (briefing §5)
+
+| Critério | Peso | Como cobrimos |
+|---|---|---|
+| **Funcionalidade** | 30 pts | 4/4 testes E2E passando ([scripts/test_endpoints.py](scripts/test_endpoints.py)). Fluxo completo: onboarding → diagnóstico → plano → chat → quiz |
+| **Integração com a CEFIS** | 25 pts | Catálogo CEFIS **inteiro** indexado (476 cursos, 12.172 aulas). URLs apontam para `cefis.com.br/curso/{slug}/{id}` reais. Login opcional puxa nome, ocupação e certificados via API REST oficial |
+| **Qualidade da IA** | 20 pts | RAG profundo: top-K chunks por similaridade sqlite-vec, prompts com regras anti-alucinação, citação obrigatória de fonte, resposta em streaming |
+| **Inovação** | 15 pts | Quiz gerado por aula a partir da transcrição real (não pergunta genérica); citação por **segundo** da aula no chat; remoção de cursos já certificados; spec lógica documentada antes do código |
+| **Experiência do usuário** | 10 pts | Branding CEFIS, animações suaves, persistência de progresso, mensagens de erro claras, modal de quiz com feedback imediato visual (verde/vermelho) |
+
+---
+
+## Diferenciais do projeto (além do briefing)
+
+1. **🏆 RAG profundo nas transcrições reais, com citação por segundo**
+   34.422 chunks vetoriais de 7.447 transcrições VTT. Quando o chat responde, traz o segundo exato onde aquele tópico é discutido na aula — clicável, abre o curso na CEFIS.
+
+2. **🏆 Catálogo 100% local indexado**
+   Sem rate limit da API CEFIS, sem latência de rede, funciona offline depois de indexado. Busca semântica instantânea em todos os 476 cursos.
+
+3. **🏆 Quiz dinâmico por aula**
+   Gerado em runtime a partir da transcrição da aula específica — 5 perguntas com mix de dificuldade (lembrar/entender/aplicar), feedback imediato e explicação justificada no conteúdo real.
+
+4. **🏆 Login CEFIS opcional com análise retroativa**
+   Botão "Já tem conta CEFIS?" autentica via API oficial. Quando logado, o sistema puxa certificados conquistados e **remove esses cursos** dos candidatos do plano — atende o "ver se a pessoa já assistiu" mencionado na live.
+
+5. **🏆 "Instala em qualquer servidor" sem Docker obrigatório**
+   Stack pura Python + venv. Script `instalar-servico.bat` registra como serviço Windows via nssm em 4 passos. Docker disponível como Plano B para Linux/cloud.
+
+6. **🏆 Zero build no frontend**
+   HTML + Alpine.js + Tailwind via CDN. Deploy = copiar arquivos. Sem npm, sem webpack, sem CI complicada.
+
+7. **🏆 URLs reais da plataforma**
+   Função `slugify()` gera o slug correto da CEFIS (`/curso/{slug}/{id}`) com normalização de acentos. Clicar em qualquer aula do plano ou em qualquer fonte do chat abre o curso de verdade na cefis.com.br.
+
+8. **🏆 Perfil persistente sem banco**
+   Tudo que o aluno preenche fica em `localStorage` + cookie httpOnly (CEFIS key). Refresh, fechar e abrir o browser, manter sessão — nada se perde.
+
+9. **🏆 Spec lógica + protótipo antes do código**
+   [Docs/specs/01-spec-logica.md](Docs/specs/01-spec-logica.md) com escopo, mapeamento de dados, diagramas Mermaid e checklist. [Docs/specs/prototipo.html](Docs/specs/prototipo.html) standalone para validação visual.
+
+10. **🏆 Testes E2E automatizados**
+    [scripts/test_endpoints.py](scripts/test_endpoints.py) valida status + onboarding + chat SSE + quiz com asserções claras. **4/4 passando** no momento da entrega.
 
 ---
 

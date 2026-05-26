@@ -125,10 +125,10 @@
       <div class="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
         <button @click="passo--" x-show="passo > 1" class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium">← Voltar</button>
         <div x-show="passo === 1"></div>
-        <button @click="passo < 3 ? passo++ : gerarPlano()" :disabled="!podeAvancar() || carregando" :class="(podeAvancar() && !carregando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'" class="ml-auto px-6 py-2.5 rounded-lg font-medium transition">
+        <button @click="passo < 3 ? passo++ : abrirSelecaoCursos()" :disabled="!podeAvancar() || carregando" :class="(podeAvancar() && !carregando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'" class="ml-auto px-6 py-2.5 rounded-lg font-medium transition">
           <span x-show="passo < 3">Continuar →</span>
-          <span x-show="passo === 3 && !carregando">Gerar meu plano ✨</span>
-          <span x-show="carregando">Gerando...</span>
+          <span x-show="passo === 3 && !carregando">Escolher cursos →</span>
+          <span x-show="carregando">Carregando...</span>
         </button>
       </div>
 
@@ -177,6 +177,73 @@
   </div>
 </div>
 
+<!-- ================== SELECAO DE CURSOS ================== -->
+<div x-show="tela === 'selecao_cursos'" class="min-h-screen gradient-bg p-4 sm:p-6">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-6">
+      <img src="/static/logo-cefis-w.svg" alt="CEFIS" class="h-8 mx-auto mb-3" />
+      <h1 class="text-2xl sm:text-3xl font-bold text-white">Escolha o que voce quer estudar</h1>
+      <p class="text-blue-100 mt-2 text-sm">Selecionamos os cursos mais relevantes para "<span x-text="perfil.goal" class="italic"></span>". Marque os que voce quer no seu plano.</p>
+      <p x-show="historico.cursos_concluidos?.length || historico.lessons_concluidas?.length" class="text-blue-200 text-xs mt-2">
+        Ja estudou: <span x-text="historico.lessons_concluidas?.length || 0"></span> aulas
+        <span x-show="historico.cursos_concluidos?.length"> • <span x-text="historico.cursos_concluidos.length"></span> cursos concluidos</span>
+      </p>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="carregandoCursos" class="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center text-slate-500">
+      <svg class="w-8 h-8 animate-spin text-blue-600 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      <p class="text-sm">Buscando cursos relevantes no catalogo CEFIS...</p>
+    </div>
+
+    <!-- Lista -->
+    <div x-show="!carregandoCursos">
+      <div class="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <p class="text-sm text-slate-600">
+            <strong x-text="cursosSelecionados.length"></strong> de <span x-text="cursosCandidatos.length"></span> cursos selecionados
+          </p>
+          <div class="flex gap-2 text-xs">
+            <button @click="cursosSelecionados = cursosCandidatos.map(c => c.id)" class="text-blue-600 hover:underline">Marcar todos</button>
+            <span class="text-slate-300">|</span>
+            <button @click="cursosSelecionados = []" class="text-slate-500 hover:underline">Limpar</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-1 scrollbar-thin">
+          <template x-for="c in cursosCandidatos" :key="c.id">
+            <label class="cursor-pointer flex gap-3 p-3 border-2 rounded-lg transition" :class="cursosSelecionados.includes(c.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300 bg-white'">
+              <input type="checkbox" :checked="cursosSelecionados.includes(c.id)" @change="toggleCurso(c.id)" class="mt-1 w-4 h-4 accent-blue-600 flex-shrink-0">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-sm leading-tight" x-text="c.title"></h3>
+                <p x-show="c.subtitle" class="text-xs text-slate-500 mt-0.5 truncate" x-text="c.subtitle"></p>
+                <div class="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+                  <span x-text="formatMin(c.duration_minutes)"></span>
+                  <span x-show="c.lesson_count">• <span x-text="c.lesson_count"></span> aulas</span>
+                  <span x-show="c.rating">• ⭐ <span x-text="c.rating?.toFixed(1)"></span></span>
+                </div>
+                <p x-show="c.teacher" class="text-xs text-slate-400 truncate" x-text="c.teacher"></p>
+                <p x-show="c.summary" class="text-xs text-slate-600 mt-1 line-clamp-2" x-text="c.summary"></p>
+                <a :href="c.course_url" target="_blank" @click.stop class="text-xs text-blue-600 hover:underline inline-block mt-1">Ver na CEFIS →</a>
+              </div>
+            </label>
+          </template>
+        </div>
+
+        <p x-show="erro" class="text-red-600 text-xs mt-3" x-text="erro"></p>
+
+        <div class="flex items-center justify-between mt-5 pt-4 border-t border-slate-100">
+          <button @click="tela='onboarding'" class="text-sm text-slate-500 hover:text-slate-900">← Voltar</button>
+          <button @click="gerarPlano(false)" :disabled="cursosSelecionados.length === 0 || carregando" :class="(cursosSelecionados.length > 0 && !carregando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'" class="px-6 py-2.5 rounded-lg font-medium transition">
+            <span x-show="!carregando">Gerar plano com <span x-text="cursosSelecionados.length"></span> curso(s) ✨</span>
+            <span x-show="carregando">Gerando...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================== LOADING DO PLANO ================== -->
 <div x-show="tela === 'gerando'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
@@ -210,18 +277,31 @@
 <div x-show="tela === 'plano'" class="min-h-screen bg-slate-50">
   <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-9 h-9" />
-        <div>
-          <div class="font-bold text-sm">Tutor CEFIS</div>
-          <div class="text-xs text-slate-500">Plano personalizado de <span x-text="perfil.name"></span></div>
+      <div class="flex items-center gap-3 min-w-0">
+        <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-9 h-9 flex-shrink-0" />
+        <div class="min-w-0">
+          <div class="font-bold text-sm flex items-center gap-2">
+            <span>Tutor CEFIS</span>
+            <span x-show="faseAtual > 1" class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800" x-text="`Fase ${faseAtual}`"></span>
+          </div>
+          <div class="text-xs text-slate-500 truncate">Plano de <span x-text="perfil.name"></span></div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 flex-wrap justify-end">
         <div class="hidden sm:block text-right">
           <div class="text-xs text-slate-500">Progresso</div>
           <div class="font-semibold text-sm" x-text="`${concluidos()}/${plano.length} • ${formatMin(duracaoTotal())}`"></div>
         </div>
+        <button
+          x-show="todosConcluidos()"
+          @click="proximaFase()"
+          :disabled="carregando"
+          class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition flex items-center gap-1"
+          :title="`Gerar fase ${faseAtual + 1} excluindo o que voce ja viu`"
+        >
+          <span x-show="!carregando">Proxima fase ⤴</span>
+          <span x-show="carregando">Gerando...</span>
+        </button>
         <button @click="reiniciar()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Reiniciar</button>
       </div>
     </div>
@@ -255,7 +335,7 @@
         <template x-for="(item, i) in plano" :key="i">
           <div class="card-hover bg-white rounded-xl border border-slate-200 p-4">
             <div class="flex items-start gap-3">
-              <button @click="item.concluido = !item.concluido" :class="item.concluido ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-blue-400'" class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition">
+              <button @click="alternarConcluido(item)" :class="item.concluido ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-blue-400'" class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition">
                 <svg x-show="item.concluido" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               </button>
               <div class="flex-1 min-w-0">
@@ -551,8 +631,22 @@ function app() {
     audioEl: null,     // HTMLAudioElement em uso
     audioCache: {},    // cache de blob URLs por chave
 
+    // Selecao de cursos (tela entre onboarding e plano)
+    cursosCandidatos: [],       // [{ id, title, summary, duration_minutes, ... }]
+    cursosSelecionados: [],     // ids
+    carregandoCursos: false,
+
+    // Historico cumulativo (cresce a cada sessao)
+    historico: {
+      lessons_concluidas: [],   // [lesson_id, ...]
+      cursos_concluidos: [],    // [course_id, ...]
+      quizzes: [],              // [{ lesson_id, acertos, total, ts }]
+      planos: [],               // [{ goal, phase, ts, items_count, completed }]
+    },
+    faseAtual: 1,               // fase do plano em curso
+
     async init() {
-      // 1) restaura perfil + passo persistido (sobrevive refresh)
+      // 1) restaura perfil + passo + historico persistido
       try {
         const saved = localStorage.getItem('cefis_perfil');
         if (saved) Object.assign(this.perfil, JSON.parse(saved));
@@ -561,13 +655,20 @@ function app() {
         const passoSalvo = parseInt(localStorage.getItem('cefis_passo') || '1', 10);
         if (passoSalvo >= 1 && passoSalvo <= 3) this.passo = passoSalvo;
       } catch (e) { /* ignore */ }
-      // 2) persiste qualquer mudanca no perfil + passo dali pra frente
+      try {
+        const hist = localStorage.getItem('cefis_historico');
+        if (hist) Object.assign(this.historico, JSON.parse(hist));
+      } catch (e) { /* ignore */ }
+      // 2) persiste mudancas dali pra frente
       this.$watch('perfil', (v) => {
         try { localStorage.setItem('cefis_perfil', JSON.stringify(v)); } catch (e) {}
       }, { deep: true });
       this.$watch('passo', (v) => {
         try { localStorage.setItem('cefis_passo', String(v)); } catch (e) {}
       });
+      this.$watch('historico', (v) => {
+        try { localStorage.setItem('cefis_historico', JSON.stringify(v)); } catch (e) {}
+      }, { deep: true });
 
       await Promise.all([this.checkStatus(), this.checkMe()]);
       this.statusTimer = setInterval(() => this.checkStatus(), 5000);
@@ -680,21 +781,75 @@ function app() {
       return this.plano.filter(p => p.concluido).length;
     },
 
-    async gerarPlano() {
+    // Apos passo 3 do onboarding: busca cursos candidatos e mostra tela
+    // de selecao manual antes de gerar plano.
+    async abrirSelecaoCursos() {
+      this.erro = '';
+      this.carregandoCursos = true;
+      this.tela = 'selecao_cursos';
+      this.cursosCandidatos = [];
+      this.cursosSelecionados = [];
+      try {
+        const r = await fetch('/api/courses/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            goal: this.perfil.goal,
+            level: this.perfil.level,
+            limit: 12,
+            exclude_course_ids: this.historico.cursos_concluidos || [],
+          }),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ detail: 'erro' }));
+          throw new Error(typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail));
+        }
+        const data = await r.json();
+        this.cursosCandidatos = data.courses || [];
+        // por padrao marca os top 5 mais relevantes
+        this.cursosSelecionados = this.cursosCandidatos.slice(0, 5).map(c => c.id);
+      } catch (e) {
+        this.erro = 'Falha ao buscar cursos: ' + e.message;
+        this.tela = 'onboarding';
+      } finally {
+        this.carregandoCursos = false;
+      }
+    },
+
+    toggleCurso(courseId) {
+      const i = this.cursosSelecionados.indexOf(courseId);
+      if (i >= 0) this.cursosSelecionados.splice(i, 1);
+      else this.cursosSelecionados.push(courseId);
+    },
+
+    // Gera o plano usando os cursos selecionados (ou todos se nada marcado)
+    async gerarPlano(nextPhase = false) {
+      if (!nextPhase && this.cursosSelecionados.length === 0) {
+        this.erro = 'Escolha pelo menos 1 curso para o plano.';
+        return;
+      }
       this.carregando = true;
       this.erro = '';
       this.tela = 'gerando';
-      // anima etapas independente da resposta real
       this.etapaAtual = 0;
       const tick = setInterval(() => {
         if (this.etapaAtual < this.etapasLoading.length - 1) this.etapaAtual++;
       }, 2500);
 
+      const phase = nextPhase ? this.faseAtual + 1 : 1;
+
       try {
+        const payload = {
+          ...this.perfil,
+          course_ids: nextPhase ? null : this.cursosSelecionados,
+          exclude_lesson_ids: this.historico.lessons_concluidas || [],
+          exclude_course_ids: this.historico.cursos_concluidos || [],
+          phase,
+        };
         const r = await fetch('/api/onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.perfil)
+          body: JSON.stringify(payload),
         });
         if (!r.ok) {
           const err = await r.json().catch(() => ({ detail: 'erro' }));
@@ -704,31 +859,90 @@ function app() {
         this.diagnostico = data.diagnosis || '';
         this.catalogGap = !!data.catalog_gap;
         this.plano = (data.plan || []).map(it => ({ ...it, concluido: false }));
+        this.faseAtual = data.phase || phase;
+
+        // registra plano gerado no historico
+        (this.historico.planos = this.historico.planos || []).push({
+          goal: this.perfil.goal,
+          phase: this.faseAtual,
+          ts: Date.now(),
+          items_count: this.plano.length,
+          completed: 0,
+        });
+
         clearInterval(tick);
         this.etapaAtual = this.etapasLoading.length;
-        // pequeno delay para o usuario ver as etapas concluidas
         await new Promise(r => setTimeout(r, 600));
         this.tela = 'plano';
         this.conversas = [{
           tipo: 'tutor',
-          texto: `Oi ${this.perfil.name}! Eu sou seu tutor CEFIS. Posso responder duvidas sobre qualquer aula do plano. Pergunte a vontade.`
+          texto: nextPhase
+            ? `Pronto ${this.perfil.name}! Esta e a fase ${this.faseAtual} - mais avancada. Vou citar so o que ainda nao vimos.`
+            : `Oi ${this.perfil.name}! Eu sou seu tutor CEFIS. Posso responder duvidas sobre qualquer aula do plano. Pergunte a vontade.`,
         }];
       } catch (e) {
         clearInterval(tick);
         this.erro = 'Falha ao gerar plano: ' + e.message;
-        this.tela = 'onboarding';
+        this.tela = nextPhase ? 'plano' : 'selecao_cursos';
       } finally {
         this.carregando = false;
       }
     },
 
+    // Marca/desmarca item do plano concluido + atualiza historico
+    alternarConcluido(item) {
+      item.concluido = !item.concluido;
+      if (item.concluido) {
+        if (item.type === 'aula' && item.lesson_id) {
+          if (!this.historico.lessons_concluidas.includes(item.lesson_id)) {
+            this.historico.lessons_concluidas.push(item.lesson_id);
+          }
+        }
+        // se TODOS os itens de um mesmo curso foram concluidos, marca curso
+        // (heuristica simples — opcional, mantemos foco em lesson)
+      } else {
+        if (item.type === 'aula' && item.lesson_id) {
+          this.historico.lessons_concluidas = this.historico.lessons_concluidas
+            .filter(id => id !== item.lesson_id);
+        }
+      }
+      // atualiza contador do ultimo plano
+      const ultimo = (this.historico.planos || [])[this.historico.planos.length - 1];
+      if (ultimo) ultimo.completed = this.concluidos();
+    },
+
+    todosConcluidos() {
+      return this.plano.length > 0 && this.plano.every(p => p.concluido);
+    },
+
+    async proximaFase() {
+      // mesmo objetivo + exclui o que ja viu + phase++
+      await this.gerarPlano(true);
+    },
+
     reiniciar() {
-      if (!confirm('Reiniciar e voltar ao onboarding?')) return;
+      const msg = (this.historico.lessons_concluidas?.length || this.historico.quizzes?.length)
+        ? 'Reiniciar plano e voltar ao onboarding?\n\n(O historico de aulas vistas e quizzes feitos sera mantido — clique em Cancelar e use "Limpar historico" se quiser zerar tudo.)'
+        : 'Reiniciar e voltar ao onboarding?';
+      if (!confirm(msg)) return;
       this.passo = 1;
       this.plano = [];
       this.conversas = [];
       this.diagnostico = '';
+      this.cursosSelecionados = [];
+      this.faseAtual = 1;
       this.tela = 'onboarding';
+    },
+
+    limparHistorico() {
+      if (!confirm('Apagar todo o historico (aulas vistas, quizzes, planos anteriores)? Esta acao nao pode ser desfeita.')) return;
+      this.historico = {
+        lessons_concluidas: [],
+        cursos_concluidos: [],
+        quizzes: [],
+        planos: [],
+      };
+      this.faseAtual = 1;
     },
 
     async enviarPergunta() {
@@ -867,6 +1081,16 @@ function app() {
         this.quizRespostaAtual = null;
       } else {
         this.quizFinalizado = true;
+        // registra resultado do quiz no historico
+        if (this.quizAtual && this.quizAtual.lesson_id) {
+          (this.historico.quizzes = this.historico.quizzes || []).push({
+            lesson_id: this.quizAtual.lesson_id,
+            course_id: this.quizAtual.course_id,
+            acertos: this.quizAcertos,
+            total,
+            ts: Date.now(),
+          });
+        }
       }
     },
 

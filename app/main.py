@@ -67,6 +67,18 @@ class OnboardingRequest(BaseModel):
     goal: str = Field(..., min_length=5, max_length=500)
     level: str = Field(..., pattern="^(Iniciante|Intermediario|Avancado)$")
     minutes: int = Field(..., ge=10, le=2400)
+    # Filtros opcionais (trilha personalizada / multi-fase)
+    course_ids: list[int] | None = Field(default=None)  # se preenchido, restringe aos escolhidos
+    exclude_lesson_ids: list[int] = Field(default_factory=list)  # ja vistas
+    exclude_course_ids: list[int] = Field(default_factory=list)  # ja concluidas
+    phase: int = Field(default=1, ge=1, le=10)  # 1 = inicial, 2+ = aprofundamento
+
+
+class CoursesSearchRequest(BaseModel):
+    goal: str = Field(..., min_length=3, max_length=500)
+    level: str = Field(default="Iniciante", pattern="^(Iniciante|Intermediario|Avancado)$")
+    limit: int = Field(default=12, ge=3, le=30)
+    exclude_course_ids: list[int] = Field(default_factory=list)
 
 
 class ChatRequest(BaseModel):
@@ -208,13 +220,26 @@ async def onboarding(
         except cefis_api.CefisAuthError:
             pass
 
-    # 1) Recupera cursos candidatos por similaridade semantica
-    query_emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
-    candidates = db.search_courses_by_embedding(query_emb, limit=25)
-    if not candidates:
-        candidates = db.search_courses_by_text(req.goal, limit=25)
-    # remove os ja concluidos
-    candidates = [c for c in candidates if c["id"] not in completed_ids][:15]
+    # 1) Recupera cursos candidatos
+    excluded_courses = set(completed_ids) | set(req.exclude_course_ids or [])
+
+    if req.course_ids:
+        # Aluno escolheu manualmente os cursos -> usa exatamente esses
+        with db.db_cursor() as cur:
+            placeholders = ",".join("?" * len(req.course_ids))
+            cur.execute(
+                f"""SELECT id, title, subtitle, summary, keywords, duration,
+                          lesson_count, average_rating, teacher_name, categories
+                   FROM courses WHERE id IN ({placeholders})""",
+                req.course_ids,
+            )
+            candidates = [dict(r) for r in cur.fetchall()]
+    else:
+        query_emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+        candidates = db.search_courses_by_embedding(query_emb, limit=30)
+        if not candidates:
+            candidates = db.search_courses_by_text(req.goal, limit=30)
+        candidates = [c for c in candidates if c["id"] not in excluded_courses][:15]
 
     # 2) Diagnostico
     diag_payload = {
@@ -251,14 +276,30 @@ async def onboarding(
         for cid in t.get("course_ids", []):
             if cid not in course_ids:
                 course_ids.append(cid)
-    course_ids = course_ids[:8]  # limita p/ nao explodir o prompt
+    # se aluno restringiu cursos, respeita
+    if req.course_ids:
+        course_ids = [c for c in course_ids if c in req.course_ids] or req.course_ids
+    course_ids = course_ids[:8]
     lessons = db.lessons_for_courses(course_ids)
+
+    # Remove aulas ja vistas no historico
+    excluded_lessons = set(req.exclude_lesson_ids or [])
+    if excluded_lessons:
+        lessons = [l for l in lessons if l["id"] not in excluded_lessons]
 
     # 4) Plano final
     plan_payload = {
         "perfil": diag_payload["perfil"],
         "objetivo": req.goal,
         "tempo_disponivel_minutos": req.minutes,
+        "fase": req.phase,
+        "fase_diretriz": (
+            "Esta e a fase inicial - cubra os fundamentos."
+            if req.phase == 1
+            else f"Esta e a fase {req.phase} de aprofundamento. O aluno ja"
+            f" estudou {len(excluded_lessons)} aulas anteriores - evite repetir"
+            " conceitos basicos e avance para topicos mais profundos ou aplicados."
+        ),
         "topicos": diagnosis.get("topics", []),
         "aulas_disponiveis": [
             {
@@ -324,6 +365,43 @@ async def onboarding(
         "catalog_gap": diagnosis.get("catalog_gap", False),
         "topics": diagnosis.get("topics", []),
         "plan": items_out,
+        "phase": req.phase,
+        "excluded_lessons_count": len(excluded_lessons),
+        "excluded_courses_count": len(excluded_courses),
+    }
+
+
+@app.post("/api/courses/search")
+async def courses_search(req: CoursesSearchRequest) -> dict:
+    """Busca semantica de cursos para o objetivo. Usado pela tela de selecao
+    antes do aluno gerar o plano (deixa ele moldar)."""
+    status_now = db.index_status()
+    if not status_now.get("embeddings"):
+        raise HTTPException(status_code=503, detail="Indice nao pronto")
+
+    emb = llm.embed(f"{req.goal}\n\nNivel: {req.level}")
+    found = db.search_courses_by_embedding(emb, limit=req.limit + len(req.exclude_course_ids) + 5)
+    if not found:
+        found = db.search_courses_by_text(req.goal, limit=req.limit + 5)
+
+    exclude = set(req.exclude_course_ids or [])
+    filtered = [c for c in found if c["id"] not in exclude][: req.limit]
+    return {
+        "courses": [
+            {
+                "id": c["id"],
+                "title": c["title"],
+                "subtitle": c.get("subtitle"),
+                "summary": (c.get("summary") or "")[:280],
+                "duration_minutes": (c.get("duration") or 0) // 60,
+                "lesson_count": c.get("lesson_count"),
+                "rating": c.get("average_rating"),
+                "teacher": c.get("teacher_name"),
+                "course_url": course_url(c["id"], c["title"]),
+            }
+            for c in filtered
+        ],
+        "total": len(filtered),
     }
 
 

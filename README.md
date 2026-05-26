@@ -9,10 +9,14 @@ Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando 
 ## Como funciona
 
 - **Onboarding (3 passos)** — perfil, objetivo livre, nível e tempo disponível.
-- **Diagnóstico de lacunas** — IA cruza o objetivo com o catálogo CEFIS e descreve o gap do aluno.
+- **Seleção manual de cursos** — antes do plano, o aluno vê os cursos candidatos rankeados por similaridade e escolhe quais quer.
+- **Diagnóstico de lacunas** — IA cruza o objetivo com os cursos escolhidos e descreve o gap do aluno.
 - **Plano de estudos** — sequência ordenada de aulas reais + resumos da IA, respeitando o tempo declarado.
 - **Chat com RAG** — perguntas livres respondidas com base no texto das aulas, citando curso/aula/segundo.
 - **Quiz por aula** — botão "Testar" em cada aula gera 5 perguntas múltipla escolha a partir da transcrição real.
+- **Áudio em todo conteúdo gerado** — botão 🔊 no diagnóstico, resumos, chat e quiz.
+- **Trilha evolutiva** — ao concluir o plano, botão "Próxima fase" gera o próximo nível excluindo o que já foi visto.
+- **Histórico local** — aulas concluídas, quizzes feitos e cursos consumidos ficam no `localStorage` e influenciam os próximos planos.
 
 Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estático com Tailwind via CDN e Alpine.js (zero build).
 
@@ -34,7 +38,7 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 |---|---|---|
 | **Geração de conteúdo original** | Resumos da IA inseridos no plano quando o catálogo não cobre; quiz com 5 perguntas geradas da transcrição real (4 alternativas + gabarito + explicação) | ✅ |
 | **Interação de dúvidas com material real** | Chat com SSE streaming. RAG sobre **34.422 chunks** vetoriais das transcrições; cita **curso, aula e segundo** de origem | ✅ |
-| **Acompanhamento contínuo** | Checkbox "concluído" em cada item do plano + quiz por aula para validar retenção | ✅ |
+| **Acompanhamento contínuo** | Histórico local persistente (aulas, quizzes, cursos) + checkbox "concluído" + quiz por aula + **trilha evolutiva multi-fase** que avança o aluno sem repetir o que já viu | ✅ |
 | **Interface bem projetada** | Wizard com progresso animado, branding CEFIS (logos oficiais), responsivo, perfil persiste em `localStorage` (sobrevive refresh) | ✅ |
 | **Múltiplos formatos** | Texto + chat conversacional + quiz interativo + **áudio TTS** (botão 🔊 em diagnóstico, resumos, chat, quiz) | ✅ |
 | **Adaptação ao estilo de aprendizagem** (visual/auditivo/cinestésico) | Áudio cobre o estilo **auditivo**; texto + diagramas cobrem o **visual**; quiz interativo cobre o **cinestésico** (engajamento ativo). Sem auto-detecção do estilo dominante. | ⚠️ parcial |
@@ -88,6 +92,15 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 
 12. **🏆 Toda saída da IA aponta para uma aula real**
     Resumo gerado pela IA? Mostra **"📎 Para se aprofundar:"** com 1-2 aulas relacionadas semanticamente (buscadas via embedding do título do resumo). Resposta do chat? Cita curso + aula + segundo. Quiz? Resultado final tem botão "Assistir a aula completa". O aluno **nunca** fica sem caminho para o material original.
+
+13. **🏆 Trilha evolutiva multi-fase**
+    Quando o aluno conclui todos os itens de um plano, surge o botão **"Próxima fase ⤴"**. A próxima fase usa o mesmo objetivo, exclui automaticamente as aulas já vistas e instrui a IA a aprofundar (não repetir fundamentos). Sem limite de fases — vira uma trilha personalizada que evolui com o aluno.
+
+14. **🏆 Seleção manual dos cursos antes do plano**
+    Após o onboarding, o aluno vê os 12 cursos mais relevantes ao objetivo (busca semântica) e marca quais quer. O plano é montado **só com os cursos escolhidos**, dando controle real ao aluno em vez de a IA decidir sozinha. Cursos já certificados (via login CEFIS) e cursos já concluídos no histórico local são automaticamente removidos.
+
+15. **🏆 Histórico local cumulativo**
+    `localStorage` guarda toda aula concluída, todo quiz feito (com nota), todo curso terminado e os planos anteriores. Esse histórico é enviado em **cada novo onboarding** como `exclude_lesson_ids` e `exclude_course_ids`, garantindo que o tutor nunca recomende algo que o aluno já viu — em qualquer fase, em qualquer sessão futura.
 
 ---
 

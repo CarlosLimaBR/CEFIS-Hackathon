@@ -178,6 +178,81 @@ async def t_chat() -> bool:
     return True
 
 
+async def t_courses_search() -> list[int]:
+    step("POST /api/courses/search (lista cursos candidatos)")
+    payload = {"goal": "PDCA e melhoria continua", "level": "Iniciante", "limit": 8}
+    t0 = time.monotonic()
+    async with httpx.AsyncClient(timeout=30.0) as c:
+        r = await c.post(f"{BASE}/api/courses/search", json=payload)
+    dt = time.monotonic() - t0
+    if r.status_code != 200:
+        fail(f"status={r.status_code} body={r.text[:300]}")
+        return []
+    d = r.json()
+    courses = d.get("courses") or []
+    if len(courses) < 3:
+        fail(f"poucos cursos: {len(courses)}")
+        return []
+    # valida shape
+    c0 = courses[0]
+    for field in ("id", "title", "course_url", "duration_minutes"):
+        if field not in c0:
+            fail(f"campo {field} ausente no curso retornado")
+            return []
+    ok(f"{len(courses)} cursos em {dt:.1f}s — top: '{c0['title'][:60]}'")
+    return [c["id"] for c in courses[:3]]
+
+
+async def t_phase_multi(course_ids: list[int]) -> bool:
+    step("POST /api/onboarding com course_ids + fase 2 (trilha multi-fase)")
+    if not course_ids:
+        fail("sem course_ids para testar fase")
+        return False
+    # primeiro: fase 1 com cursos especificos
+    payload = {
+        "name": "Bot",
+        "areas": [4],
+        "goal": "PDCA e melhoria continua",
+        "level": "Iniciante",
+        "minutes": 30,
+        "course_ids": course_ids,
+        "exclude_lesson_ids": [],
+        "phase": 1,
+    }
+    async with httpx.AsyncClient(timeout=120.0) as c:
+        r = await c.post(f"{BASE}/api/onboarding", json=payload)
+    if r.status_code != 200:
+        fail(f"fase 1 falhou: status={r.status_code} body={r.text[:200]}")
+        return False
+    d1 = r.json()
+    plan1 = d1.get("plan") or []
+    if not plan1:
+        fail("fase 1 sem plano")
+        return False
+    lessons_vistas = [it["lesson_id"] for it in plan1 if it.get("type") == "aula" and it.get("lesson_id")]
+    print(f"     fase 1 OK: {len(plan1)} itens, {len(lessons_vistas)} aulas")
+    # agora: fase 2 excluindo o que viu
+    payload2 = {**payload, "phase": 2, "exclude_lesson_ids": lessons_vistas, "course_ids": None}
+    async with httpx.AsyncClient(timeout=120.0) as c:
+        r = await c.post(f"{BASE}/api/onboarding", json=payload2)
+    if r.status_code != 200:
+        fail(f"fase 2 falhou: status={r.status_code} body={r.text[:200]}")
+        return False
+    d2 = r.json()
+    plan2 = d2.get("plan") or []
+    if not plan2:
+        fail("fase 2 sem plano")
+        return False
+    lessons2 = [it.get("lesson_id") for it in plan2 if it.get("type") == "aula"]
+    repetidas = set(lessons2) & set(lessons_vistas)
+    if repetidas:
+        fail(f"fase 2 repetiu aulas vistas: {repetidas}")
+        return False
+    ok(f"fase 2: {len(plan2)} itens (phase={d2.get('phase')}) — sem repetir aulas da fase 1")
+    print(f"     excluded_lessons_count reportado: {d2.get('excluded_lessons_count')}")
+    return True
+
+
 async def t_tts() -> bool:
     step("POST /api/tts (audio MP3 streaming)")
     payload = {"text": "Teste de audio do tutor CEFIS."}
@@ -290,6 +365,11 @@ async def main() -> int:
     results["chat"] = await t_chat()
     results["tts"] = await t_tts()
     results["quiz"] = await t_quiz(onb.get("plan") if onb else None)
+
+    # trilha personalizada (selecao manual + multi-fase)
+    course_ids = await t_courses_search()
+    results["courses_search"] = bool(course_ids)
+    results["multi_fase"] = await t_phase_multi(course_ids)
 
     # valida que resumos do plano vieram com related_lessons
     if onb:

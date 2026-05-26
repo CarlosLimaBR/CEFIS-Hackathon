@@ -10,13 +10,15 @@ Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando 
 
 - **Onboarding (3 passos)** — perfil, objetivo livre, nível e tempo disponível.
 - **Seleção manual de cursos** — antes do plano, o aluno vê os cursos candidatos rankeados por similaridade e escolhe quais quer.
+- **Trilhas oficiais CEFIS** — atalho via integração com `GET /tracks` da API real: aluno pode adotar uma trilha curada pela CEFIS em vez de partir do zero.
 - **Diagnóstico de lacunas** — IA cruza o objetivo com os cursos escolhidos e descreve o gap do aluno.
+- **Continue de onde parou** — quando logado, o sistema lê o `progress` real das aulas via API CEFIS e o tutor sugere retomar onde o aluno estava.
 - **Plano de estudos** — sequência ordenada de aulas reais + resumos da IA, respeitando o tempo declarado.
 - **Chat com RAG** — perguntas livres respondidas com base no texto das aulas, citando curso/aula/segundo.
 - **Quiz por aula** — botão "Testar" em cada aula gera 5 perguntas múltipla escolha a partir da transcrição real.
 - **Áudio em todo conteúdo gerado** — botão 🔊 no diagnóstico, resumos, chat e quiz.
-- **Trilha evolutiva** — ao concluir o plano, botão "Próxima fase" gera o próximo nível excluindo o que já foi visto.
-- **Histórico local** — aulas concluídas, quizzes feitos e cursos consumidos ficam no `localStorage` e influenciam os próximos planos.
+- **Trilha evolutiva multi-fase** — ao concluir o plano, botão "Próxima fase" gera o próximo nível excluindo o que já foi visto.
+- **Histórico local cumulativo** — aulas concluídas, quizzes feitos e cursos consumidos ficam no `localStorage` e influenciam os próximos planos automaticamente.
 
 Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estático com Tailwind via CDN e Alpine.js (zero build).
 
@@ -48,7 +50,7 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 | Critério | Peso | Como cobrimos |
 |---|---|---|
 | **Funcionalidade** | 30 pts | 4/4 testes E2E passando ([scripts/test_endpoints.py](scripts/test_endpoints.py)). Fluxo completo: onboarding → diagnóstico → plano → chat → quiz |
-| **Integração com a CEFIS** | 25 pts | Catálogo CEFIS **inteiro** indexado (476 cursos, 12.172 aulas). URLs apontam para `cefis.com.br/curso/{slug}/{id}` reais. Login opcional puxa nome, ocupação e certificados via API REST oficial |
+| **Integração com a CEFIS** | 25 pts | Catálogo CEFIS **inteiro** indexado (476 cursos, 12.172 aulas). URLs apontam para `cefis.com.br/curso/{slug}/{id}` reais. **5 endpoints da API CEFIS conectados**: login, /user/me, /performance/certificates, **/tracks (trilhas oficiais)** e **/courses/:id/lessons com progresso real** |
 | **Qualidade da IA** | 20 pts | RAG profundo: top-K chunks por similaridade sqlite-vec, prompts com regras anti-alucinação, citação obrigatória de fonte, resposta em streaming |
 | **Inovação** | 15 pts | Quiz gerado por aula a partir da transcrição real (não pergunta genérica); citação por **segundo** da aula no chat; remoção de cursos já certificados; spec lógica documentada antes do código |
 | **Experiência do usuário** | 10 pts | Branding CEFIS, animações suaves, persistência de progresso, mensagens de erro claras, modal de quiz com feedback imediato visual (verde/vermelho) |
@@ -85,7 +87,7 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
    [Docs/specs/01-spec-logica.md](Docs/specs/01-spec-logica.md) com escopo, mapeamento de dados, diagramas Mermaid e checklist. [Docs/specs/prototipo.html](Docs/specs/prototipo.html) standalone para validação visual.
 
 10. **🏆 Testes E2E automatizados**
-    [scripts/test_endpoints.py](scripts/test_endpoints.py) valida status + onboarding + chat SSE + TTS + quiz + referências em resumos. **6/6 passando** no momento da entrega.
+    [scripts/test_endpoints.py](scripts/test_endpoints.py) valida status, onboarding, chat SSE, TTS, quiz, busca de cursos, trilha multi-fase, trilhas oficiais CEFIS e referências em resumos. **9/9 passando** no momento da entrega.
 
 11. **🏆 Áudio em todo conteúdo gerado pela IA**
     Botão 🔊 ao lado do diagnóstico, dos resumos do plano, das respostas do chat e das explicações do quiz. MP3 streaming via OpenAI TTS (`tts-1`), toggle play/pausa, cache por sessão.
@@ -101,6 +103,12 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 
 15. **🏆 Histórico local cumulativo**
     `localStorage` guarda toda aula concluída, todo quiz feito (com nota), todo curso terminado e os planos anteriores. Esse histórico é enviado em **cada novo onboarding** como `exclude_lesson_ids` e `exclude_course_ids`, garantindo que o tutor nunca recomende algo que o aluno já viu — em qualquer fase, em qualquer sessão futura.
+
+16. **🏆 Integração com trilhas oficiais da CEFIS**
+    Endpoint `GET /api/cefis-tracks` consome a API real `/tracks` e mostra ao aluno **trilhas curadas pela própria CEFIS** como atalho. Selecionar uma trilha popula os `course_ids` do plano com a curadoria oficial. **20 trilhas reais** carregadas em ~400ms.
+
+17. **🏆 "Continue de onde parou" com progresso real**
+    Quando o aluno está logado, o backend chama `/courses/:id/lessons` em paralelo (asyncio.gather) para os 3 cursos mais relevantes ao objetivo, lê o `progress.percentage` real e identifica **aulas em andamento** (entre 5% e 90%). Essa informação vai para o prompt do diagnóstico, que recomenda explicitamente retomar de onde parou.
 
 ---
 

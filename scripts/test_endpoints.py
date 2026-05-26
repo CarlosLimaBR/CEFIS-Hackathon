@@ -178,6 +178,26 @@ async def t_chat() -> bool:
     return True
 
 
+async def t_cefis_tracks() -> bool:
+    step("GET /api/cefis-tracks (trilhas oficiais CEFIS via API real)")
+    t0 = time.monotonic()
+    async with httpx.AsyncClient(timeout=20.0) as c:
+        r = await c.get(f"{BASE}/api/cefis-tracks")
+    dt = time.monotonic() - t0
+    if r.status_code != 200:
+        fail(f"status={r.status_code} body={r.text[:200]}")
+        return False
+    d = r.json()
+    tracks = d.get("tracks") or []
+    if not tracks:
+        # nao e erro fatal: API CEFIS pode estar fora ou sem trilhas publicas
+        print(f"     (sem trilhas retornadas; provavel API CEFIS off ou cache vazio)")
+        ok(f"endpoint respondeu 200 em {dt:.1f}s")
+        return True
+    ok(f"{len(tracks)} trilhas em {dt:.1f}s — top: '{tracks[0].get('name','')[:60]}'")
+    return True
+
+
 async def t_courses_search() -> list[int]:
     step("POST /api/courses/search (lista cursos candidatos)")
     payload = {"goal": "PDCA e melhoria continua", "level": "Iniciante", "limit": 8}
@@ -370,6 +390,9 @@ async def main() -> int:
     course_ids = await t_courses_search()
     results["courses_search"] = bool(course_ids)
     results["multi_fase"] = await t_phase_multi(course_ids)
+
+    # integracao com API CEFIS (trilhas oficiais)
+    results["cefis_tracks"] = await t_cefis_tracks()
 
     # valida que resumos do plano vieram com related_lessons
     if onb:

@@ -206,6 +206,7 @@ async def onboarding(
     # Se logado, puxa certificados ja conquistados para nao recomendar repetido
     completed_ids: set[int] = set()
     extra_profile: dict = {}
+    in_progress_lessons: list[dict] = []  # aulas que o aluno comecou mas nao terminou
     if cefis_key:
         try:
             user = await cefis_api.me(cefis_key)
@@ -241,6 +242,39 @@ async def onboarding(
             candidates = db.search_courses_by_text(req.goal, limit=30)
         candidates = [c for c in candidates if c["id"] not in excluded_courses][:15]
 
+    # 1b) Se logado, busca progresso real das aulas dos top-3 cursos candidatos.
+    # Permite o tutor sugerir "continue de onde parou".
+    if cefis_key and candidates:
+        import asyncio
+        try:
+            top_ids = [c["id"] for c in candidates[:3]]
+            results = await asyncio.gather(
+                *(cefis_api.course_lessons_with_progress(cid, cefis_key) for cid in top_ids),
+                return_exceptions=True,
+            )
+            for cid, lessons_with_p in zip(top_ids, results):
+                if isinstance(lessons_with_p, Exception):
+                    continue
+                for ll in lessons_with_p or []:
+                    prog = ll.get("progress") or {}
+                    pct = prog.get("percentage") or 0
+                    if 5 < pct < 90:  # em andamento (nao novo, nao concluido)
+                        course_title = next(
+                            (c["title"] for c in candidates if c["id"] == cid), ""
+                        )
+                        in_progress_lessons.append(
+                            {
+                                "course_id": cid,
+                                "course_title": course_title,
+                                "lesson_id": ll.get("id"),
+                                "lesson_title": ll.get("title"),
+                                "percentage": pct,
+                                "last_second": prog.get("lastSecond"),
+                            }
+                        )
+        except Exception as e:
+            print(f"[progress] {e}")
+
     # 2) Diagnostico
     diag_payload = {
         "perfil": {
@@ -251,6 +285,7 @@ async def onboarding(
             **extra_profile,
         },
         "objetivo": req.goal,
+        "aulas_em_andamento": in_progress_lessons[:5] if in_progress_lessons else [],
         "cursos_disponiveis": [
             {
                 "id": c["id"],
@@ -368,6 +403,63 @@ async def onboarding(
         "phase": req.phase,
         "excluded_lessons_count": len(excluded_lessons),
         "excluded_courses_count": len(excluded_courses),
+    }
+
+
+@app.get("/api/cefis-tracks")
+async def list_cefis_tracks(
+    cefis_key: str | None = Cookie(default=None, alias=SESSION_COOKIE),
+) -> dict:
+    """Lista trilhas curadas pela CEFIS (atalho para o objetivo)."""
+    try:
+        items = await cefis_api.tracks(count=20, api_key=cefis_key)
+    except Exception as e:
+        print(f"[cefis-tracks] {e}")
+        return {"tracks": [], "error": str(e)}
+    out = []
+    for t in items:
+        out.append(
+            {
+                "id": t.get("id"),
+                "name": t.get("name"),
+                "description": (t.get("description") or "")[:300],
+                "banner": t.get("banner"),
+                "course_count": t.get("course_count"),
+                "duration_minutes": (t.get("duration") or 0) // 60,
+                "categories": t.get("categories") or [],
+                "rating": t.get("rating"),
+                "following": t.get("following", False),
+            }
+        )
+    return {"tracks": out, "total": len(out)}
+
+
+@app.get("/api/cefis-tracks/{track_id}")
+async def get_cefis_track(
+    track_id: int,
+    cefis_key: str | None = Cookie(default=None, alias=SESSION_COOKIE),
+) -> dict:
+    """Detalhe de uma trilha CEFIS, com os course_ids para o tutor usar."""
+    detail = await cefis_api.track_detail(track_id, api_key=cefis_key)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Trilha nao encontrada")
+    courses = detail.get("courses") or []
+    course_ids = [c["id"] for c in courses if c.get("id")]
+    return {
+        "id": detail.get("id"),
+        "name": detail.get("name"),
+        "description": detail.get("description"),
+        "course_count": len(courses),
+        "course_ids": course_ids,
+        "courses": [
+            {
+                "id": c.get("id"),
+                "title": c.get("title"),
+                "duration_minutes": (c.get("duration") or 0) // 60,
+                "teacher": (c.get("teacher") or {}).get("name"),
+            }
+            for c in courses
+        ],
     }
 
 

@@ -198,6 +198,39 @@
 
     <!-- Lista -->
     <div x-show="!carregandoCursos">
+      <!-- Atalho: trilhas oficiais CEFIS -->
+      <div class="mb-3">
+        <button @click="carregarTrilhasCefis()" class="w-full text-left bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-3 text-white hover:bg-white/20 transition flex items-center justify-between">
+          <span class="text-sm font-medium">🛤️ Ou use uma <strong>trilha oficial da CEFIS</strong> como atalho</span>
+          <span class="text-xs" x-text="mostrarTrilhas ? '▲ ocultar' : '▼ mostrar'"></span>
+        </button>
+        <div x-show="mostrarTrilhas" class="mt-2 bg-white rounded-xl shadow-lg p-3 max-h-72 overflow-y-auto scrollbar-thin">
+          <div x-show="carregandoTrilhas" class="text-center py-4 text-slate-500 text-sm">
+            <svg class="w-5 h-5 animate-spin inline mr-2 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            Buscando trilhas oficiais...
+          </div>
+          <div x-show="!carregandoTrilhas && trilhasCefis.length === 0" class="text-center py-4 text-slate-500 text-sm">
+            Nenhuma trilha disponivel no momento.
+          </div>
+          <div class="space-y-2">
+            <template x-for="t in trilhasCefis" :key="t.id">
+              <div class="border border-slate-200 rounded-lg p-3 flex items-start gap-3 hover:border-blue-300">
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-semibold text-sm leading-tight" x-text="t.name"></h4>
+                  <p x-show="t.description" class="text-xs text-slate-600 mt-0.5 line-clamp-2" x-text="t.description"></p>
+                  <div class="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+                    <span x-show="t.course_count"><span x-text="t.course_count"></span> cursos</span>
+                    <span x-show="t.duration_minutes">• <span x-text="formatMin(t.duration_minutes)"></span></span>
+                    <span x-show="t.rating">• ⭐ <span x-text="(t.rating).toFixed(1)"></span></span>
+                  </div>
+                </div>
+                <button @click="aplicarTrilha(t.id)" class="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded whitespace-nowrap">Usar trilha →</button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white rounded-2xl shadow-2xl p-4 sm:p-6">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
           <p class="text-sm text-slate-600">
@@ -636,6 +669,11 @@ function app() {
     cursosSelecionados: [],     // ids
     carregandoCursos: false,
 
+    // Trilhas oficiais CEFIS
+    trilhasCefis: [],
+    mostrarTrilhas: false,
+    carregandoTrilhas: false,
+
     // Historico cumulativo (cresce a cada sessao)
     historico: {
       lessons_concluidas: [],   // [lesson_id, ...]
@@ -820,6 +858,54 @@ function app() {
       const i = this.cursosSelecionados.indexOf(courseId);
       if (i >= 0) this.cursosSelecionados.splice(i, 1);
       else this.cursosSelecionados.push(courseId);
+    },
+
+    // Carrega trilhas oficiais da CEFIS (na demanda)
+    async carregarTrilhasCefis() {
+      if (this.trilhasCefis.length || this.carregandoTrilhas) {
+        this.mostrarTrilhas = !this.mostrarTrilhas;
+        return;
+      }
+      this.carregandoTrilhas = true;
+      this.mostrarTrilhas = true;
+      try {
+        const r = await fetch('/api/cefis-tracks');
+        const d = await r.json();
+        this.trilhasCefis = d.tracks || [];
+      } catch (e) {
+        console.error('[trilhas]', e);
+      } finally {
+        this.carregandoTrilhas = false;
+      }
+    },
+
+    // Aplica uma trilha CEFIS: substitui os cursos selecionados pelos da trilha
+    async aplicarTrilha(trackId) {
+      try {
+        const r = await fetch(`/api/cefis-tracks/${trackId}`);
+        if (!r.ok) throw new Error('trilha nao encontrada');
+        const d = await r.json();
+        const ids = d.course_ids || [];
+        if (!ids.length) return;
+        // adiciona ao topo dos candidatos (caso nao esteja la) e seleciona
+        const existentes = new Set(this.cursosCandidatos.map(c => c.id));
+        const novos = (d.courses || [])
+          .filter(c => !existentes.has(c.id))
+          .map(c => ({
+            id: c.id,
+            title: c.title,
+            duration_minutes: c.duration_minutes,
+            teacher: c.teacher,
+            course_url: `https://cefis.com.br/curso/${this.slugify(c.title)}/${c.id}`,
+          }));
+        this.cursosCandidatos = [...novos, ...this.cursosCandidatos];
+        this.cursosSelecionados = ids;
+        this.mostrarTrilhas = false;
+        // toast simples
+        alert(`Trilha "${d.name}" aplicada: ${ids.length} cursos selecionados.`);
+      } catch (e) {
+        alert('Erro ao aplicar trilha: ' + e.message);
+      }
     },
 
     // Gera o plano usando os cursos selecionados (ou todos se nada marcado)

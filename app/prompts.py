@@ -16,6 +16,8 @@ Regras absolutas:
   curso que nao esteja na lista fornecida.
 - Se o catalogo nao cobrir bem o objetivo, sinalize com `catalog_gap: true` e
   proponha topicos genericos mesmo assim.
+- Se o payload trouxer `aulas_em_andamento` nao-vazio, MENCIONE no diagnostico
+  que voce reconhece o progresso atual e sugere retomar de onde parou (1 frase).
 
 Schema de resposta:
 {

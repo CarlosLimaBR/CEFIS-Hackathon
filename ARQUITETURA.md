@@ -1,10 +1,10 @@
-# Arquitetura
+# 🏗️ Arquitetura
 
 Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Stack
+## 🛠️ Stack
 
 - **Backend:** Python 3.11 + FastAPI + SQLite com sqlite-vec + OpenAI
 - **Frontend:** HTML + Tailwind via CDN + Alpine.js (sem etapa de build)
@@ -12,7 +12,7 @@ Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Diagrama de arquitetura
+## 📐 Diagrama de arquitetura
 
 ```
                           ┌───────────────────────────────┐
@@ -46,7 +46,7 @@ Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Fluxo principal — gerar um plano
+## 🔄 Fluxo principal — gerar um plano
 
 ```
 1. Browser → POST /api/onboarding
@@ -74,7 +74,7 @@ Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Fluxo do chat (RAG com SSE)
+## 💬 Fluxo do chat (RAG com SSE)
 
 ```
 1. Browser → POST /api/chat
@@ -98,7 +98,7 @@ Visão técnica do Tutor IA CEFIS: stack, fluxos, decisões.
 
 ---
 
-## Decisões de design
+## 🎯 Decisões de design
 
 ### 1. Por que catálogo local em vez de só API?
 
@@ -142,7 +142,7 @@ Limite conhecido: ruim para multi-instância (sem replicação). Para hackathon 
 
 ---
 
-## Endpoints (20 rotas)
+## 🔌 Endpoints (20 rotas)
 
 ### Públicos (não precisam de auth)
 
@@ -172,7 +172,7 @@ Limite conhecido: ruim para multi-instância (sem replicação). Para hackathon 
 
 ---
 
-## Modelo de prompts
+## 🤖 Modelo de prompts
 
 Todos os prompts vivem em [`app/prompts.py`](app/prompts.py) — fácil de revisar e A/B testar.
 
@@ -193,7 +193,7 @@ Todos os prompts vivem em [`app/prompts.py`](app/prompts.py) — fácil de revis
 
 ---
 
-## Indexação (offline)
+## 📚 Indexação (offline)
 
 Roda uma vez via `scripts/index_transcripts.py`:
 
@@ -219,7 +219,7 @@ Detalhes do schema em [DATABASE.md](DATABASE.md).
 
 ---
 
-## Frontend (`app/static/index.html`)
+## 🎨 Frontend (`app/static/index.html`)
 
 Tudo em um arquivo HTML. Estado gerenciado por Alpine.js (`x-data="app()"`):
 
@@ -248,7 +248,7 @@ Watchers Alpine: `$watch('perfil', ...)` e `$watch('historico', ...)` salvam aut
 
 ---
 
-## Testes E2E
+## 🧪 Testes E2E
 
 `scripts/test_endpoints.py` — 10 testes que batem direto nos endpoints HTTP:
 
@@ -279,8 +279,8 @@ Validação manual no browser foi feita via Playwright headless: abre Chrome rea
 
 ---
 
-## Próximos passos
+## 🔗 Próximos passos
 
-- Schema do banco: [DATABASE.md](DATABASE.md)
-- Como deployar: [DEPLOY.md](DEPLOY.md)
-- Roadmap de v2: [PROXIMAS_FUNCIONALIDADES.md](PROXIMAS_FUNCIONALIDADES.md)
+- 💾 Schema do banco: [DATABASE.md](DATABASE.md)
+- 🚀 Como deployar: [DEPLOY.md](DEPLOY.md)
+- 🛤️ Roadmap de v2: [PROXIMAS_FUNCIONALIDADES.md](PROXIMAS_FUNCIONALIDADES.md)

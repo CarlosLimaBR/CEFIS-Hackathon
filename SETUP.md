@@ -1,12 +1,12 @@
-# Setup local (Windows)
+# 🛠️ Setup local (Windows)
 
 Como rodar o Tutor IA CEFIS na máquina local para desenvolvimento, teste ou demonstração offline.
 
-> Para deploy em servidor, consulte [DEPLOY.md](DEPLOY.md).
+> 🚀 Para deploy em servidor, consulte [DEPLOY.md](DEPLOY.md).
 
 ---
 
-## Pré-requisitos
+## 📋 Pré-requisitos
 
 - **Python 3.11+** ([python.org/downloads](https://www.python.org/downloads/)) — marque "Add to PATH" no instalador.
 - Pasta `Docs/output/` com o catálogo extraído (zip já vem em `Docs/courses.zip`).
@@ -15,7 +15,7 @@ Como rodar o Tutor IA CEFIS na máquina local para desenvolvimento, teste ou dem
 
 ---
 
-## Passo a passo (~30 min, sendo ~25 min de indexação)
+## 🚦 Passo a passo (~30 min, sendo ~25 min de indexação)
 
 ### 1. Clonar e extrair catálogo
 
@@ -77,7 +77,7 @@ Acesse: **http://localhost:8000**
 
 ---
 
-## Estrutura do projeto
+## 📁 Estrutura do projeto
 
 ```
 app/
@@ -123,7 +123,7 @@ web.config.recommended    web.config otimizado para IIS reverse proxy
 
 ---
 
-## Variáveis de ambiente (`.env`)
+## ⚙️ Variáveis de ambiente (`.env`)
 
 | Variável | Default | Descrição |
 |---|---|---|
@@ -138,7 +138,7 @@ web.config.recommended    web.config otimizado para IIS reverse proxy
 
 ---
 
-## Smoke test após instalar
+## 🧪 Smoke test após instalar
 
 Com o servidor rodando em http://localhost:8000:
 
@@ -169,8 +169,8 @@ http://localhost:8000/api/diag
 
 ---
 
-## Próximos passos
+## 🔗 Próximos passos
 
-- Para entender a aplicação: [ARQUITETURA.md](ARQUITETURA.md)
-- Para entender os dados: [DATABASE.md](DATABASE.md)
-- Para deploy real: [DEPLOY.md](DEPLOY.md)
+- 🏗️ Entender a aplicação: [ARQUITETURA.md](ARQUITETURA.md)
+- 💾 Entender os dados: [DATABASE.md](DATABASE.md)
+- 🚀 Deploy em servidor: [DEPLOY.md](DEPLOY.md)

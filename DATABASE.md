@@ -1,10 +1,10 @@
-# Database
+# 💾 Database
 
 Estrutura do índice local (`data/cefis.db`) e como ele é populado.
 
 ---
 
-## Visão geral
+## 🔎 Visão geral
 
 - **Engine:** SQLite 3 com extensão [`sqlite-vec`](https://github.com/asg017/sqlite-vec) para busca vetorial
 - **Tamanho final:** ~260 MB com todo o catálogo indexado
@@ -23,7 +23,7 @@ Estatísticas no momento da entrega:
 
 ---
 
-## Schema completo
+## 📐 Schema completo
 
 ```sql
 CREATE TABLE courses (
@@ -72,7 +72,7 @@ CREATE VIRTUAL TABLE chunk_embeddings USING vec0(
 
 ---
 
-## Origem dos dados
+## 📂 Origem dos dados
 
 Tudo vem do `Docs/output/` (descompactação de `Docs/courses.zip`):
 
@@ -91,7 +91,7 @@ O indexador aceita ambos os nomes de VTT (`subtitle_pt.vtt` para cursos antigos,
 
 ---
 
-## Chunking de transcrições
+## ✂️ Chunking de transcrições
 
 Cada VTT é parseado em "cues" (blocos com timestamp + texto). Cues consecutivos são agrupados em **janelas de 60 segundos**:
 
@@ -113,7 +113,7 @@ Trade-off:
 
 ---
 
-## Embeddings
+## 🧬 Embeddings
 
 - **Modelo:** OpenAI `text-embedding-3-small`
 - **Dimensão:** 1536
@@ -129,7 +129,7 @@ Em runtime:
 
 ---
 
-## Estado da indexação
+## 📊 Estado da indexação
 
 Após `scripts/index_transcripts.py` terminar, gera `data/index_state.json`:
 
@@ -151,7 +151,7 @@ A UI lê via `GET /api/status` para mostrar barra de progresso enquanto indexa.
 
 ---
 
-## Queries-chave do runtime
+## 🔍 Queries-chave do runtime
 
 ### 1. Top-K cursos por similaridade (`db.search_courses_by_embedding`)
 
@@ -241,7 +241,7 @@ LIMIT 80;
 
 ---
 
-## Categorias (inferidas do catálogo)
+## 🏷️ Categorias (inferidas do catálogo)
 
 A documentação do dev fala em `categories: 1-7` mas não nomeia. Analisando as 699 ocorrências de `categories[]` em todos os cursos:
 
@@ -259,7 +259,7 @@ Esses nomes aparecem no onboarding da UI (passo 1) e são usados para fazer matc
 
 ---
 
-## Dados do cliente (localStorage)
+## 🌐 Dados do cliente (localStorage)
 
 Nada de PII no servidor — perfil e histórico vivem no browser:
 
@@ -281,7 +281,7 @@ cefis_key  -> API key da CEFIS quando o aluno faz login (opcional)
 
 ---
 
-## Backup / migração
+## 💼 Backup / migração
 
 ```bash
 # Backup
@@ -299,7 +299,7 @@ indexar.bat --reset
 
 ---
 
-## Limites conhecidos & roadmap
+## ⚠️ Limites conhecidos & roadmap
 
 | Limite | Hoje | Plano v2 |
 |---|---|---|

@@ -10,7 +10,7 @@ Onboarding em 3 passos, mensagem contextual do tutor com áudio automático, pla
 
 ---
 
-## Documentação
+## 📚 Documentação
 
 | Documento | Conteúdo |
 |---|---|
@@ -26,31 +26,31 @@ Onboarding em 3 passos, mensagem contextual do tutor com áudio automático, pla
 
 ## O que foi entregue
 
-### Aprendizado ativo
+### 🎭 Aprendizado ativo (Roleplay)
 
-**Roleplay aplicado — "Pratique com o tutor"**. O aluno escolhe um cenário real (apresentar PDCA para o CFO cético, defender planejamento tributário em auditoria, negociar prazo com cliente exigente, explicar IFRS 16 em treinamento interno). A IA interpreta o personagem com tom realista e faz perguntas. Após algumas trocas, o aluno recebe feedback estruturado com nota 0-10, pontos fortes, pontos a melhorar e 3 aulas reais do catálogo CEFIS linkadas para aprofundar. Funciona inteiramente por voz.
+**"Pratique com o tutor"**. O aluno escolhe um cenário real (apresentar PDCA para o CFO cético, defender planejamento tributário em auditoria, negociar prazo com cliente exigente, explicar IFRS 16 em treinamento interno). A IA interpreta o personagem com tom realista e faz perguntas. Após algumas trocas, o aluno recebe feedback estruturado com nota 0-10, pontos fortes, pontos a melhorar e 3 aulas reais do catálogo CEFIS linkadas para aprofundar. Funciona inteiramente por voz.
 
-### RAG profundo nas transcrições
+### 🧠 RAG profundo nas transcrições
 
 O catálogo completo foi indexado: 476 cursos, 12.172 aulas, 7.447 transcrições VTT, totalizando **34.422 chunks vetoriais** (sqlite-vec, 1536 dimensões). Quando o aluno pergunta no chat, o tutor responde citando **curso, aula e segundo exato** onde aquilo é dito. As citações são clicáveis e abrem o curso real em `cefis.com.br/curso/{slug}/{id}`.
 
-### Tutor contextual
+### 💬 Tutor contextual
 
 A "Mensagem do tutor" cita nominalmente o que o aluno já dominou em 2-3 frases, explica o que esta sessão entrega e fecha com uma frase conectando ao objetivo profissional declarado. O áudio toca automaticamente ao abrir a sessão.
 
-### Trajetória de Mestria
+### 🎓 Trajetória de Mestria
 
 Um conceito é marcado como dominado quando o aluno conclui a aula **e** acerta ≥80% no quiz da mesma aula. A métrica representa retenção observada, não presença. Insights automáticos baseados nos dados do próprio aluno: período do dia com melhor taxa de acerto, comparativo com a média semanal, taxa de retenção validada.
 
-### Chat por voz hands-free
+### 🎤 Chat por voz hands-free
 
 Web Speech API capta a pergunta em português, envia automaticamente e a resposta toca em voz alta via TTS. Permite uso do tutor sem mãos livres em contextos como ônibus, carro ou rotinas de exercício.
 
-### Sessão recorrente "tenho X minutos agora"
+### ➕ Sessão recorrente "tenho X minutos agora"
 
 Botão visível no header. O aluno informa o tempo atual e escolhe continuar o mesmo objetivo (fase N+1) ou trocar de tema. O histórico cumulativo garante que aulas já vistas são puladas automaticamente.
 
-### Integração com a API CEFIS (5 endpoints)
+### 🔗 Integração com a API CEFIS (5 endpoints)
 
 - `POST /api/v1/login` — autenticação
 - `GET /api/v1/user/me` — dados do usuário (nome, ocupação, áreas, premium)
@@ -58,29 +58,29 @@ Botão visível no header. O aluno informa o tempo atual e escolhe continuar o m
 - `GET /tracks` + `GET /tracks/:id` — 20 trilhas oficiais curadas pela CEFIS
 - `GET /courses/:id/lessons` — progresso real em tempo real para "continuar de onde parou"
 
-### Demais entregas
+### 🧩 Demais entregas
 
-- **Welcome screen** com retomada inteligente para alunos que voltam
-- **Loading dinâmico** com 12 etapas em pool (sorteia 4) + 12 dicas rotativas apresentando as features
-- **Modal de conclusão de sessão** com opções "Praticar" / "Nova sessão"
-- **Quiz dinâmico** gerado em runtime da transcrição real da aula
-- **Áudio TTS** em todo conteúdo gerado pela IA (botão 🔊 em mensagem do tutor, resumos, chat, quiz)
-- **Resumos com markdown rico** e diagramas Mermaid quando o tema é sequencial (PDCA, DMAIC)
-- **Dashboard "Meu Progresso"** com cards de stats, distribuição por área, sessões recentes
-- **Modo escuro** com toggle persistente
-- **Logos CEFIS oficiais** em todas as telas
-- **Perfil persistente** em localStorage (sobrevive a refresh, login, troca de aba)
+- **👋 Welcome screen** com retomada inteligente para alunos que voltam
+- **🎬 Loading dinâmico** com 12 etapas em pool (sorteia 4) + 12 dicas rotativas apresentando as features
+- **🎉 Modal de conclusão de sessão** com opções "Praticar" / "Nova sessão"
+- **❓ Quiz dinâmico** gerado em runtime da transcrição real da aula
+- **🔊 Áudio TTS** em todo conteúdo gerado pela IA (mensagem do tutor, resumos, chat, quiz)
+- **📝 Resumos com markdown rico** e diagramas Mermaid quando o tema é sequencial (PDCA, DMAIC)
+- **📊 Dashboard "Meu Progresso"** com cards de stats, distribuição por área, sessões recentes
+- **🌙 Modo escuro** com toggle persistente
+- **🎨 Logos CEFIS oficiais** em todas as telas
+- **💾 Perfil persistente** em localStorage (sobrevive a refresh, login, troca de aba)
 
-### Bases arquiteturais
+### 🏗️ Bases arquiteturais
 
 - Toda saída da IA aponta para uma aula real do catálogo (resumos linkam para "📎 Para se aprofundar", chat cita fontes clicáveis, quiz oferece "Assistir aula completa")
 - Stack portável: Python + venv + nssm como serviço Windows; Dockerfile incluso como alternativa
 - Frontend sem build: Tailwind e Alpine.js via CDN, deploy é cópia de arquivos
-- Deploy real funcionando: Windows Server + IIS + URL Rewrite + ARR + Let's Encrypt em [tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org)
+- Deploy em produção: Windows Server + IIS + URL Rewrite + ARR + Let's Encrypt em [tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org)
 
 ---
 
-## Galeria de telas
+## 📸 Galeria de telas
 
 <table>
   <tr>
@@ -124,7 +124,7 @@ Botão visível no header. O aluno informa o tempo atual e escolhe continuar o m
 
 ---
 
-## Atendimento aos requisitos do hackathon
+## ✅ Atendimento aos requisitos do hackathon
 
 ### Entrega mínima obrigatória (briefing §4.1)
 
@@ -157,7 +157,7 @@ Botão visível no header. O aluno informa o tempo atual e escolhe continuar o m
 
 ---
 
-## Stack
+## 🛠️ Stack
 
 - **Backend:** Python 3.11 + FastAPI + SQLite + sqlite-vec + OpenAI (gpt-4o-mini, text-embedding-3-small, tts-1)
 - **Frontend:** HTML + Tailwind CDN + Alpine.js. Sem build.
@@ -167,7 +167,7 @@ Detalhes em [ARQUITETURA.md](ARQUITETURA.md).
 
 ---
 
-## Quick start
+## ⚡ Quick start
 
 ```cmd
 git clone https://github.com/CarlosLimaBR/CEFIS-Hackathon.git

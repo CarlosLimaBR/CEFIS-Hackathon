@@ -1,4 +1,4 @@
-# Próximas funcionalidades
+# 🛤️ Próximas funcionalidades
 
 Roadmap pós-hackathon, organizado por prazo e impacto. O documento serve como registro do que ainda faz sentido evoluir, assumindo o estado atual como base.
 
@@ -6,11 +6,11 @@ Roadmap pós-hackathon, organizado por prazo e impacto. O documento serve como r
 
 ---
 
-## Já implementado (até 26/05/2026)
+## ✅ Já implementado (até 26/05/2026)
 
 Snapshot do que ficou pronto no hackathon:
 
-### Núcleo
+### 🎯 Núcleo
 - **Onboarding** em 3 passos + seleção manual de cursos candidatos
 - **Diagnóstico contextual** ("Mensagem do tutor") que reconhece histórico, cita conceitos dominados e apresenta a sessão atual em 2-3 frases
 - **Plano de estudos** com cards diferenciados (Aula CEFIS / Resumo IA / Quiz)
@@ -19,7 +19,7 @@ Snapshot do que ficou pronto no hackathon:
 - **Modal de conclusão de sessão** com opções "Praticar" / "Nova sessão"
 - **Loading dinâmico** com 12 etapas em pool + 12 dicas rotativas das features
 
-### Interação
+### 💬 Interação
 - **Chat com RAG** em 34.422 chunks vetoriais, citando curso/aula/segundo
 - **Áudio TTS** em todo conteúdo gerado pela IA
 - **Autoplay** da mensagem do tutor ao iniciar a sessão
@@ -28,33 +28,33 @@ Snapshot do que ficou pronto no hackathon:
 - **Voz no roleplay** com TTS automático do personagem
 - **Quiz dinâmico** gerado da transcrição real da aula clicada
 
-### Gamificação
+### 🎓 Gamificação
 - **Trajetória de Mestria**: conceito marcado como dominado quando o aluno conclui a aula e acerta ≥80% no quiz
 - **Toast discreto** ao dominar novo conceito
 - **Insights automáticos**: sessões na semana vs média, melhor período do dia para acerto em quiz, taxa de retenção, conceitos dominados na semana
 - Sem streak diário, sem ranking entre alunos — comparativos restritos aos próprios dados do usuário
 
-### Personalização e trilha
+### 🛤️ Personalização e trilha
 - **Histórico cumulativo** em localStorage (aulas, quizzes com nota, cursos, planos, conceitos)
 - **Nova sessão recorrente** "tenho X minutos agora" — continuar mesmo objetivo ou trocar de tema
 - **Trilha multi-fase**: cada sessão concluída libera próxima fase, excluindo automaticamente o que já foi visto
 - **Trilhas oficiais CEFIS** via API real (`/tracks`) como atalho ao objetivo livre
 - **Resumos linkam para aulas reais** ("Para se aprofundar:")
 
-### Integração CEFIS (5 endpoints)
+### 🔗 Integração CEFIS (5 endpoints)
 - `POST /api/v1/login` + `GET /api/v1/user/me`
 - `GET /performance/certificates` (remove cursos já certificados do plano)
 - `GET /tracks` + `GET /tracks/:id` (trilhas oficiais)
 - `GET /courses/:id/lessons` com progress real ("continue de onde parou")
 
-### UX / produto
+### 🎨 UX / produto
 - **Modo escuro** com toggle persistente
 - **Logos CEFIS oficiais** em todas as telas
 - **Slug correto** nas URLs (`/curso/{slug}/{id}`)
 - **Perfil persistente** em localStorage (sobrevive refresh)
 - **Dashboard "Meu Progresso"** com cards de stats + trajetória + insights
 
-### Operacional
+### ⚙️ Operacional
 - **Deploy público** Windows Server + IIS + nssm + Let's Encrypt
 - **Scripts .bat** para indexar, iniciar, instalar serviço, atualizar
 - **10/10 testes E2E** automatizados ([scripts/test_endpoints.py](scripts/test_endpoints.py))
@@ -62,7 +62,7 @@ Snapshot do que ficou pronto no hackathon:
 
 ---
 
-## Curto prazo (1-2 semanas cada)
+## ⚡ Curto prazo (1-2 semanas cada)
 
 Itens que cabem na arquitetura atual sem refatoração relevante.
 
@@ -80,7 +80,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Médio prazo (1-3 meses)
+## 🎯 Médio prazo (1-3 meses)
 
 ### Personalização adaptativa
 
@@ -106,7 +106,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Longo prazo (3-12 meses)
+## 🚀 Longo prazo (3-12 meses)
 
 ### IA agente
 
@@ -121,7 +121,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 - **Estudar em grupo** — mesma trilha, mesma fase, sincronizada
 - **Mentoria peer-to-peer** matched por nível complementar
 
-### Operacional / negócio
+### ⚙️ Operacional / negócio
 
 - **Multi-tenant B2B**: empresas com sub-domínio próprio, white-label, dashboard de gestor
 - **Marketplace de trilhas** criadas por professores top
@@ -139,7 +139,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Acessibilidade e UX
+## ♿ Acessibilidade e UX
 
 - Internacionalização (PT-BR, EN, ES)
 - WCAG AA: leitor de tela, alto contraste, navegação por teclado completa
@@ -148,7 +148,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Segurança e privacidade
+## 🔒 Segurança e privacidade
 
 - Rate limit por IP e por usuário
 - Sanitização de input nos prompts contra prompt injection
@@ -158,7 +158,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Exploratórias
+## 💡 Exploratórias
 
 - **"Pergunte ao professor da aula"**: voz e estilo do professor (com autorização) usados como persona do chat
 - **Simulação de prova CRC** com timer, questões oficiais e relatório de prontidão
@@ -168,7 +168,7 @@ Itens que cabem na arquitetura atual sem refatoração relevante.
 
 ---
 
-## Princípios de design adotados
+## 🎨 Princípios de design adotados
 
 - Mestria mensurável em vez de pontos abstratos
 - Auto-comparação em vez de ranking social
@@ -181,7 +181,7 @@ Esses princípios orientam as próximas decisões de produto.
 
 ---
 
-## Como contribuir
+## 🤝 Como contribuir
 
 PRs bem-vindos. Antes de começar uma feature grande:
 

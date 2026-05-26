@@ -1,12 +1,12 @@
-# Deploy no servidor Windows 192.169.179.16
+# 🚀 Deploy no servidor Windows 192.169.179.16
 
 Guia operacional. Tempo total estimado: 40 a 50 minutos, dos quais cerca de 25 minutos correspondem à indexação rodando em background.
 
-> Pré-condições: Python 3.11+, IIS com URL Rewrite e ARR habilitados, `web.config` em `C:\TutorCEFIS` configurado como reverse proxy para `localhost:8000`.
+> ℹ️ **Pré-condições:** Python 3.11+, IIS com URL Rewrite e ARR habilitados, `web.config` em `C:\TutorCEFIS` configurado como reverse proxy para `localhost:8000`.
 
 ---
 
-## Checklist
+## ✅ Checklist
 
 ```
 [ ] 1. Instalar nssm.exe (5 min)
@@ -23,7 +23,7 @@ Guia operacional. Tempo total estimado: 40 a 50 minutos, dos quais cerca de 25 m
 
 ---
 
-## Passos detalhados
+## 📋 Passos detalhados
 
 ### 1. Instalar nssm
 
@@ -158,7 +158,7 @@ A SPA do tutor carrega.
 
 ---
 
-## Pós-deploy — operações
+## ⚙️ Pós-deploy — operações
 
 | Comando | O que faz |
 |---|---|
@@ -168,7 +168,7 @@ A SPA do tutor carrega.
 | `nssm stop TutorCEFIS` | Parar |
 | `C:\TutorCEFIS\.venv\Scripts\python.exe C:\TutorCEFIS\scripts\test_endpoints.py http://localhost:8000` | Rodar testes E2E contra o serviço |
 
-## Atualizar código depois
+## 🔄 Atualizar código depois
 
 ```cmd
 nssm stop TutorCEFIS
@@ -180,7 +180,7 @@ nssm start TutorCEFIS
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 **`502 Bad Gateway`:** serviço caiu. `sc query TutorCEFIS` e veja `service-err.log`.
 

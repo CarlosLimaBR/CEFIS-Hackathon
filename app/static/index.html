@@ -1050,11 +1050,13 @@ function app() {
           content: c.texto,
         }));
 
-      // bolha vazia do tutor — vai sendo preenchida pelo stream
-      const tutorMsg = { tipo: 'tutor', texto: '', fontes: [] };
-      this.conversas.push(tutorMsg);
+      // bolha vazia do tutor — vai sendo preenchida pelo stream.
+      // IMPORTANTE: empurra e depois acessa via indice no array reativo do
+      // Alpine. Mutar uma referencia externa NAO dispara re-render.
+      this.conversas.push({ tipo: 'tutor', texto: '', fontes: [] });
+      const idxMsg = this.conversas.length - 1;
 
-      // timeout total: 60s. Aborta o fetch se passar disso.
+      // timeout total: 60s
       const abort = new AbortController();
       const timer = setTimeout(() => {
         console.warn('[chat] timeout (60s) - abortando');
@@ -1075,12 +1077,12 @@ function app() {
           let detail = '';
           try { detail = JSON.stringify(await resp.json()); }
           catch (_) { try { detail = await resp.text(); } catch (_) { detail = ''; } }
-          tutorMsg.texto = `Erro ${resp.status}: ${detail.slice(0, 400) || '(sem detalhe)'}`;
+          this.conversas[idxMsg].texto = `Erro ${resp.status}: ${detail.slice(0, 400) || '(sem detalhe)'}`;
           console.error('[chat] http error', resp.status, detail);
           return;
         }
         if (!resp.body) {
-          tutorMsg.texto = 'Servidor nao retornou stream (resp.body vazio).';
+          this.conversas[idxMsg].texto = 'Servidor nao retornou stream (resp.body vazio).';
           console.error('[chat] no body');
           return;
         }
@@ -1109,8 +1111,8 @@ function app() {
 
             if (ev.event === 'sources') {
               try {
-                tutorMsg.fontes = JSON.parse(ev.data) || [];
-                console.log('[chat] fontes:', tutorMsg.fontes.length);
+                this.conversas[idxMsg].fontes = JSON.parse(ev.data) || [];
+                console.log('[chat] fontes:', this.conversas[idxMsg].fontes.length);
               } catch (e) { console.error('[chat] parse sources', e, ev.data); }
             } else if (ev.event === 'token') {
               try {
@@ -1119,14 +1121,14 @@ function app() {
                   primeiroToken = true;
                   console.log('[chat] primeiro token recebido');
                 }
-                tutorMsg.texto += tok;
+                this.conversas[idxMsg].texto = this.conversas[idxMsg].texto + tok;
                 totalTokens++;
                 this.scrollChat();
               } catch (e) { console.error('[chat] parse token', e, ev.data); }
             } else if (ev.event === 'error') {
               let msg = '[erro de stream]';
               try { msg = `[erro: ${JSON.parse(ev.data).message || ev.data}]`; } catch (_) {}
-              tutorMsg.texto += '\n\n' + msg;
+              this.conversas[idxMsg].texto = this.conversas[idxMsg].texto + '\n\n' + msg;
               console.error('[chat] stream error', ev.data);
             } else if (ev.event === 'done') {
               console.log('[chat] evento done recebido');
@@ -1136,15 +1138,16 @@ function app() {
           }
         }
 
-        if (totalTokens === 0 && !tutorMsg.texto) {
-          tutorMsg.texto = '(Nenhum conteudo recebido. Veja o terminal do servidor para detalhes.)';
+        if (totalTokens === 0 && !this.conversas[idxMsg].texto) {
+          this.conversas[idxMsg].texto = '(Nenhum conteudo recebido. Veja o terminal do servidor para detalhes.)';
         }
-        console.log('[chat] concluido:', totalTokens, 'tokens,', tutorMsg.texto.length, 'chars');
+        console.log('[chat] concluido:', totalTokens, 'tokens,', this.conversas[idxMsg].texto.length, 'chars');
       } catch (e) {
         if (e.name === 'AbortError') {
-          tutorMsg.texto = '\n\n[timeout - servidor demorou mais de 60s para responder]';
+          this.conversas[idxMsg].texto = '[timeout - servidor demorou mais de 60s para responder]';
         } else {
-          tutorMsg.texto += (tutorMsg.texto ? '\n\n' : '') + `[falha: ${e.message}]`;
+          const prev = this.conversas[idxMsg].texto;
+          this.conversas[idxMsg].texto = prev + (prev ? '\n\n' : '') + `[falha: ${e.message}]`;
         }
         console.error('[chat] exception', e);
       } finally {

@@ -2,11 +2,11 @@
 
 Tutor de aprendizado personalizado feito para o **Hackathon de Inovação em Aprendizado da CEFIS** (26/05/2026).
 
-Onboarding curto, diagnóstico de lacunas, plano cronometrado usando o catálogo real, chat de dúvidas com RAG sobre as transcrições das aulas, quiz por aula, áudio em todo conteúdo gerado pela IA, trilha evolutiva multi-fase, dashboard de progresso, welcome screen com retomada inteligente, **chat por voz hands-free** e **roleplay aplicado** ("pratique apresentar PDCA para o seu CFO cético").
+Onboarding curto, mensagem contextual do tutor (com áudio automático), plano cronometrado usando o catálogo real, chat com RAG sobre as transcrições, quiz por aula, áudio em todo conteúdo gerado, trilha evolutiva multi-fase, dashboard com **Trajetória de Mestria** + insights automáticos, welcome screen com retomada inteligente, loading dinâmico com dicas das features, **chat por voz hands-free** e **roleplay aplicado** ("pratique apresentar PDCA para o seu CFO cético").
 
 🌐 **Acesse:** [https://tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org)
 
-**Status:** ✅ 10/10 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless. Deploy público em Windows Server com IIS + Let's Encrypt.
+**Status:** ✅ 10/10 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless. 20 rotas backend. Deploy público em Windows Server com IIS + Let's Encrypt.
 
 ---
 
@@ -28,16 +28,19 @@ Onboarding curto, diagnóstico de lacunas, plano cronometrado usando o catálogo
 
 > Diferenciais que **a maioria dos times não vai ter** e que cobrem os critérios mais valiosos do briefing (Funcionalidade 30pt + Integração CEFIS 25pt + Qualidade IA 20pt = 75% da nota).
 
-1. **🎭 "Pratique com o tutor" (roleplay aplicado)** — único no mercado. Aluno escolhe um cenário real (apresentar pro CFO, defender em auditoria, negociar com cliente), o tutor **interpreta o personagem** e faz perguntas duras. Após 4-6 trocas, recebe **feedback estruturado** com nota, pontos fortes, pontos a melhorar e aulas CEFIS relacionadas. **Aprendizado ativo** (Feynman) vs passivo.
-2. **🎤 Chat por voz hands-free** — Web Speech API + TTS. Fala "O que é PDCA?" → o tutor responde **em voz alta**. Atende o cenário "15 min no ônibus" da live literalmente.
-3. **RAG profundo nas transcrições reais** — 7.447 transcrições VTT em **34.422 chunks vetoriais** (sqlite-vec, 1536 dims). O chat cita **curso + aula + segundo exato** onde aquela informação foi falada.
-4. **Catálogo 100% local + 5 endpoints da API CEFIS conectados** — login, perfil, certificados, **trilhas oficiais** (`/tracks`) e **progresso por aula em tempo real** (`/courses/:id/lessons`).
-5. **Sessão recorrente "tenho X min agora"** — Botão **Nova sessão** sempre visível, pergunta tempo atual, escolhe continuar mesmo objetivo ou trocar de tema. Histórico cumulativo garante zero repetição.
-6. **Welcome screen com retomada inteligente** — quando o aluno volta, é recebido por nome, vê stats e botão "▶ Continuar sessão atual". Materializa "o tutor que te conhece" em 1 segundo.
-7. **Quiz dinâmico por aula** — 5 perguntas geradas da transcrição da aula específica, feedback imediato.
-8. **Áudio TTS em todo conteúdo gerado** — botão 🔊 no diagnóstico, resumos, chat e explicações do quiz.
-9. **Dashboard "Meu progresso"** — cards de stats, plano atual com %, sessões anteriores, quizzes recentes, distribuição por área.
-10. **Modo escuro** com toggle persistente.
+1. **🎭 "Pratique com o tutor" (roleplay aplicado)** — único. Aluno escolhe cenário real (apresentar pro CFO, defender em auditoria, negociar com cliente), tutor **interpreta o personagem** e faz perguntas duras. No fim, **feedback estruturado** com nota, pontos fortes/melhoria e aulas CEFIS linkadas. Aprendizado ativo (Feynman) vs passivo. **Funciona por voz**.
+2. **🎤 Chat por voz hands-free** — Web Speech API + TTS. Fala a pergunta → tutor responde em voz alta. Atende "15 min no ônibus" da live literalmente.
+3. **💬 Mensagem do tutor contextual** — em 2-3 frases reconhece nominalmente o que você já dominou, explica o que esta sessão entrega e fecha com motivação profissional. **Toca em áudio automaticamente** quando o plano carrega — você é recebido pelo tutor falando.
+4. **🎓 Trajetória de Mestria** — conceitos dominados = aula concluída **+** quiz com ≥80%. Métrica de retenção real, não "abriu o app". Insights automáticos ("Você acerta 95% à noite", "Sua retenção em IFRS é 80%"). **Sem streak, sem ranking social** — gamificação profissional pra adultos.
+5. **🧠 RAG profundo nas transcrições reais** — 7.447 VTTs em **34.422 chunks vetoriais** (sqlite-vec). Chat cita **curso + aula + segundo exato**.
+6. **🔗 Catálogo 100% local + 5 endpoints da API CEFIS** — login, perfil, certificados, **trilhas oficiais** e **progresso por aula em tempo real**.
+7. **➕ Sessão recorrente "tenho X min agora"** — Nova sessão sempre visível, pergunta tempo atual, continua mesmo objetivo ou troca de tema. Zero repetição via histórico cumulativo.
+8. **👋 Welcome screen** — quem volta é recebido por nome com botão "▶ Continuar sessão atual". "Tutor que te conhece" em 1 segundo.
+9. **🎬 Loading dinâmico** — etapas sorteadas a cada geração + **12 dicas rotativas** apresentando as features. Nunca se repete.
+10. **📝 Resumos com markdown rico + diagramas Mermaid** — quando o tema é sequencial (PDCA, DMAIC), o resumo vira fluxograma visual.
+11. **❓ Quiz dinâmico por aula** + **🔊 áudio TTS em todo conteúdo gerado**.
+12. **📊 Dashboard "Meu progresso"** com cards, distribuição por área e histórico de sessões.
+13. **🌙 Modo escuro** com toggle persistente.
 
 Bônus arquiteturais:
 
@@ -82,6 +85,12 @@ Bônus arquiteturais:
   <tr>
     <td colspan="2"><b>🌙 Modo escuro + 🎤 microfone</b><br/>Toggle sol/lua no header, persiste em localStorage. Botão de microfone ao lado do input do chat: Web Speech API capta voz, envia automático e a resposta toca em áudio (TTS). Hands-free total.<br/><br/><img src="Docs/screenshots/13-dark-mode.png" alt="Modo escuro com microfone"/></td>
   </tr>
+  <tr>
+    <td colspan="2"><b>🎓 Trajetória de Mestria + Insights</b><br/>Gamificação profissional para adultos (sem streak agressivo, sem ranking social). <b>Conceitos dominados</b> = aula concluída <b>+</b> quiz com ≥80%. Mostra retenção real (não "abriu o app"), distribuição por área e <b>insights automáticos</b> ("Você acerta 95% à noite", "+275% vs sua média"). Toast discreto ao dominar novo conceito.<br/><br/><img src="Docs/screenshots/14-mestria-insights.png" alt="Trajetória de Mestria"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>🎬 Loading dinâmico com dicas rotativas</b><br/>Cada geração de plano sorteia 4 etapas de um pool de 12 (sempre diferente), incluindo etapas <b>contextuais</b> ("Considerando o que você já dominou" só se há conceitos dominados). Embaixo, card com 12 dicas das funcionalidades em rotação — o aluno descobre o sistema enquanto espera.<br/><br/><img src="Docs/screenshots/15-loading-dinamico.png" alt="Loading dinâmico"/></td>
+  </tr>
 </table>
 
 ---
@@ -111,7 +120,7 @@ Bônus arquiteturais:
 
 | Critério | Peso | Cobertura |
 |---|---|---|
-| **Funcionalidade** | 30 pts | **9/9 testes E2E** + validação Playwright real |
+| **Funcionalidade** | 30 pts | **10/10 testes E2E** + validação Playwright real |
 | **Integração com a CEFIS** | 25 pts | 476 cursos indexados + **5 endpoints da API CEFIS conectados** |
 | **Qualidade da IA** | 20 pts | RAG profundo, anti-alucinação, streaming, citação obrigatória de fonte |
 | **Inovação** | 15 pts | Quiz da transcrição real + citação por segundo + sessão recorrente + retomar de onde parou |

@@ -160,11 +160,11 @@ async def diag() -> dict:
         out["openai"]["embed_ok"] = False
         out["openai"]["embed_error"] = _openai_error_detail(e)
 
-    # 3) Chat — chamada minima
+    # 3) Chat — chamada minima (precisa da palavra 'json' nas messages)
     try:
         r = llm.chat_json(
             messages=[
-                {"role": "system", "content": 'Responda apenas com {"ok": true}'},
+                {"role": "system", "content": 'Responda apenas em json no formato {"ok": true}.'},
                 {"role": "user", "content": "ping"},
             ],
             temperature=0,

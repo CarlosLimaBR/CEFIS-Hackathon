@@ -9,7 +9,7 @@ aluno e uma lista de cursos disponiveis no catalogo, identificar:
 2. A sequencia de topicos que ele precisa cobrir, em ordem pedagogica.
 
 Regras absolutas:
-- Responda APENAS com JSON valido seguindo o schema fornecido.
+- Responda APENAS com json valido (JSON) seguindo o schema fornecido.
 - Diagnostico em portugues do Brasil, tom acolhedor, 3 a 5 frases. Use "voce".
 - A lista de topicos deve ter entre 3 e 8 itens, do mais fundamental ao mais aplicado.
 - Cada topico deve mapear para 1 ou mais cursos do catalogo (por id). Nao invente
@@ -46,7 +46,7 @@ no tempo disponivel. Cada item e ou uma AULA do catalogo (referenciada por
 lesson_id) ou um RESUMO gerado por voce (texto curto).
 
 Regras absolutas:
-- Responder APENAS com JSON valido.
+- Responder APENAS com json valido (JSON estrito).
 - O total de duracao dos itens NAO PODE ultrapassar o tempo disponivel +10%.
 - Pelo menos 1 item DEVE ser do tipo "aula" (id real do catalogo).
 - Se o tempo for muito curto, priorize 1 aula curta + resumos.
@@ -88,7 +88,7 @@ Voce e um avaliador pedagogico da CEFIS. Recebe a transcricao REAL de uma aula
 e gera um quiz curto para verificar se o aluno entendeu o conteudo.
 
 Regras absolutas:
-- Responder APENAS com JSON valido no schema fornecido.
+- Responder APENAS com json valido (JSON estrito) no schema fornecido.
 - 5 perguntas de multipla escolha (4 alternativas cada) baseadas
   EXCLUSIVAMENTE no conteudo dos trechos fornecidos. Nunca invente fatos.
 - Se o conteudo nao da para gerar 5 boas perguntas, gere menos (minimo 3).

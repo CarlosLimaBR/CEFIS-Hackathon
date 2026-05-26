@@ -2,7 +2,9 @@
 
 Tutor de aprendizado personalizado feito para o **Hackathon de Inovação em Aprendizado da CEFIS** (26/05/2026).
 
-Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando o catálogo real e chat de dúvidas com RAG sobre as transcrições das aulas.
+Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando o catálogo real, chat de dúvidas com RAG sobre as transcrições das aulas, quiz por aula, áudio em todo conteúdo gerado pela IA, trilha evolutiva multi-fase e histórico cumulativo.
+
+**Status:** ✅ 9/9 testes E2E (`scripts/test_endpoints.py`) + validação real no browser via Playwright headless.
 
 ---
 
@@ -149,6 +151,8 @@ A indexação é idempotente — pode interromper com `Ctrl+C` e rodar de novo q
 ---
 
 ## Deploy — servidor Windows (Python + nssm como serviço)
+
+> 💡 **Guia rápido pronto:** [DEPLOY.md](DEPLOY.md) tem o checklist de 10 passos especificamente para servidor com IIS reverse proxy (~40 min, incluindo indexação).
 
 Esse é o caminho **recomendado** para produção em qualquer Windows Server.
 

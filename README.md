@@ -10,6 +10,46 @@ Onboarding curto, diagnóstico de lacunas, plano de estudos cronometrado usando 
 
 ---
 
+## 🏆 Em 1 minuto — o que mais pesa nessa entrega
+
+> Diferenciais que **a maioria dos times não vai ter** e que cobrem os critérios mais valiosos do briefing (Funcionalidade 30pt + Integração CEFIS 25pt + Qualidade IA 20pt = 75% da nota).
+
+1. **RAG profundo nas transcrições reais** — não busca por keyword na ementa. Indexei as **7.447 transcrições VTT** em **34.422 chunks vetoriais** (sqlite-vec, 1536 dims). O chat cita **curso + aula + segundo exato** onde aquela informação foi falada.
+2. **Catálogo 100% local + 5 endpoints da API CEFIS conectados** — login, perfil, certificados, **trilhas oficiais** (`/tracks`) e **progresso por aula em tempo real** (`/courses/:id/lessons`). Sem rate-limit, sem latência de API no caminho crítico.
+3. **Modelo de sessão recorrente "tenho X min agora"** — exatamente como o CEO da live descreveu ("15 min no ônibus, capitalize esse tempo"). Botão **Nova sessão** sempre visível, pergunta tempo atual, escolhe continuar mesmo objetivo ou trocar de tema. Histórico cumulativo garante zero repetição.
+4. **Quiz dinâmico por aula** — 5 perguntas geradas em runtime da transcrição da aula específica, mix de dificuldade, feedback imediato, explicação justificada no conteúdo real.
+5. **Áudio (TTS) em todo conteúdo gerado pela IA** — botão 🔊 no diagnóstico, resumos, chat e quiz. Atende "múltiplos formatos" + estilo de aprendizagem auditivo.
+
+Bônus arquiteturais:
+- **Toda saída da IA aponta de volta para uma aula real** — resumos têm "📎 Para se aprofundar:", chat cita fontes clicáveis, quiz tem "Assistir aula completa" no resultado.
+- **"Instala em qualquer servidor"** — Python + venv + nssm como serviço Windows (sem Docker obrigatório), Dockerfile como plano B.
+- **Zero build no frontend** — Tailwind + Alpine.js via CDN. Deploy = copiar arquivos.
+- **Deploy real**: Windows Server + IIS + ARR + Let's Encrypt rodando em [tutor-cefis.duckdns.org](https://tutor-cefis.duckdns.org).
+
+---
+
+## 📸 Galeria de telas
+
+<table>
+  <tr>
+    <td width="50%"><b>Onboarding em 3 passos</b><br/>Áreas inferidas do catálogo real (215 cursos de Fiscal & Tributário, 203 de Contábil, etc).<br/><br/><img src="Docs/screenshots/01-onboarding-passo1.png" alt="Onboarding passo 1"/></td>
+    <td width="50%"><b>Objetivo livre</b><br/>O aluno escreve o que quer alcançar — base do diagnóstico da IA.<br/><br/><img src="Docs/screenshots/02-onboarding-passo2.png" alt="Onboarding passo 2"/></td>
+  </tr>
+  <tr>
+    <td><b>Nível + tempo disponível</b><br/>Slider de 10min a 40h. A IA respeita o tempo declarado +10%.<br/><br/><img src="Docs/screenshots/03-onboarding-passo3.png" alt="Onboarding passo 3"/></td>
+    <td><b>Seleção manual dos cursos</b><br/>O aluno vê os 12 cursos mais relevantes (busca semântica) e escolhe quais quer. Atalho para <b>trilhas oficiais</b> da CEFIS no topo (via API real).<br/><br/><img src="Docs/screenshots/04-selecao-cursos.png" alt="Seleção de cursos"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>Plano + Chat com RAG</b><br/>Diagnóstico em prosa, plano com cards diferenciados (🎬 Aula CEFIS / 📝 Resumo IA), chat lateral cita curso + aula + segundo das transcrições reais. Áudio (🔊) em todo conteúdo gerado.<br/><br/><img src="Docs/screenshots/05-plano-chat.png" alt="Plano e chat"/></td>
+  </tr>
+  <tr>
+    <td><b>Modal "Nova sessão"</b><br/>"Tenho X minutos agora" — gera próxima sessão respeitando o tempo atual, pulando o que já foi visto. Pode continuar mesmo objetivo ou trocar de tema.<br/><br/><img src="Docs/screenshots/06-modal-nova-sessao.png" alt="Modal Nova sessão"/></td>
+    <td><b>Quiz por aula</b><br/>5 perguntas geradas da transcrição real da aula clicada. Mix de dificuldade, feedback imediato verde/vermelho, explicação justificada no conteúdo.<br/><br/><img src="Docs/screenshots/07-quiz.png" alt="Quiz"/></td>
+  </tr>
+</table>
+
+---
+
 ## Como funciona
 
 - **Onboarding (3 passos)** — perfil, objetivo livre, nível e tempo disponível.
@@ -53,7 +93,7 @@ Stack: **Python + FastAPI + SQLite + sqlite-vec + OpenAI**. Frontend HTML estát
 
 | Critério | Peso | Como cobrimos |
 |---|---|---|
-| **Funcionalidade** | 30 pts | 4/4 testes E2E passando ([scripts/test_endpoints.py](scripts/test_endpoints.py)). Fluxo completo: onboarding → diagnóstico → plano → chat → quiz |
+| **Funcionalidade** | 30 pts | **9/9 testes E2E** passando ([scripts/test_endpoints.py](scripts/test_endpoints.py)) + validação real via Playwright. Fluxo completo: onboarding → seleção → plano → chat (SSE) → quiz → TTS → trilhas oficiais → multi-fase |
 | **Integração com a CEFIS** | 25 pts | Catálogo CEFIS **inteiro** indexado (476 cursos, 12.172 aulas). URLs apontam para `cefis.com.br/curso/{slug}/{id}` reais. **5 endpoints da API CEFIS conectados**: login, /user/me, /performance/certificates, **/tracks (trilhas oficiais)** e **/courses/:id/lessons com progresso real** |
 | **Qualidade da IA** | 20 pts | RAG profundo: top-K chunks por similaridade sqlite-vec, prompts com regras anti-alucinação, citação obrigatória de fonte, resposta em streaming |
 | **Inovação** | 15 pts | Quiz gerado por aula a partir da transcrição real (não pergunta genérica); citação por **segundo** da aula no chat; remoção de cursos já certificados; spec lógica documentada antes do código |

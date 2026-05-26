@@ -314,22 +314,28 @@ async def t_quiz(plan: list[dict] | None) -> bool:
                 break
     if not lesson_id:
         # fallback: busca qualquer aula com transcricao indexada
-        async with httpx.AsyncClient(timeout=10.0) as c:
-            r = await c.post(
-                f"{BASE}/api/onboarding",
-                json={
-                    "name": "Bot",
-                    "areas": [4],
-                    "goal": "Quero entender melhoria continua e PDCA",
-                    "level": "Iniciante",
-                    "minutes": 30,
-                },
-                timeout=120.0,
-            )
-            for it in (r.json().get("plan") or []):
-                if it.get("type") == "aula" and it.get("lesson_id"):
-                    lesson_id = it["lesson_id"]
-                    break
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as c:
+                r = await c.post(
+                    f"{BASE}/api/onboarding",
+                    json={
+                        "name": "Bot",
+                        "areas": [4],
+                        "goal": "Quero entender melhoria continua e PDCA",
+                        "level": "Iniciante",
+                        "minutes": 30,
+                    },
+                )
+            if r.status_code == 200:
+                try:
+                    for it in (r.json().get("plan") or []):
+                        if it.get("type") == "aula" and it.get("lesson_id"):
+                            lesson_id = it["lesson_id"]
+                            break
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"     fallback de onboarding falhou: {e}")
     if not lesson_id:
         fail("nenhuma aula com lesson_id disponivel para testar quiz")
         return False

@@ -117,6 +117,282 @@
   </div>
 </div>
 
+<!-- ================== LANDING PAGE ================== -->
+<div x-show="tela === 'landing'" class="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+
+  <!-- Top bar -->
+  <header class="px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur z-40">
+    <div class="flex items-center gap-3">
+      <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-8 h-8" />
+      <div class="font-bold">Tutor IA <span class="text-blue-600 dark:text-blue-400">CEFIS</span></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button @click="darkMode = !darkMode" :title="darkMode ? 'Modo claro' : 'Modo escuro'" class="text-base hover:opacity-80">
+        <span x-show="!darkMode">🌙</span>
+        <span x-show="darkMode">☀️</span>
+      </button>
+      <button @click="iniciarTutor()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">Iniciar tutor →</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="gradient-bg text-white py-16 sm:py-24 px-6 relative overflow-hidden">
+    <!-- Bolas decorativas -->
+    <div class="absolute -top-32 -right-32 w-96 h-96 bg-white/5 rounded-full"></div>
+    <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-white/5 rounded-full"></div>
+
+    <div class="max-w-5xl mx-auto relative">
+      <div class="inline-block px-3 py-1 bg-white/15 backdrop-blur rounded-full text-xs font-semibold tracking-wide mb-5">
+        🚀 HACKATHON CEFIS 2026
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-bold leading-tight mb-5">
+        O tutor que <span class="text-amber-300">reconhece</span> voce<br />
+        e aplica o conhecimento <span class="text-amber-300">na pratica</span>.
+      </h1>
+      <p class="text-lg sm:text-xl text-blue-100 max-w-2xl mb-8 leading-relaxed">
+        Mensagem contextual com seu historico, plano sob medida, chat por voz, quiz dinamico e roleplay aplicado — tudo conectado as transcricoes reais do catalogo CEFIS.
+      </p>
+      <div class="flex flex-wrap gap-3 mb-12">
+        <button @click="iniciarTutor()" class="px-7 py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-xl shadow-lg transition text-base">
+          Iniciar tutor →
+        </button>
+        <a href="https://github.com/CarlosLimaBR/CEFIS-Hackathon" target="_blank" class="px-7 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/30 text-white font-medium rounded-xl transition text-base">
+          Ver no GitHub
+        </a>
+      </div>
+
+      <!-- Mini stats inline -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl">
+        <div>
+          <div class="text-3xl sm:text-4xl font-bold text-amber-300">476</div>
+          <div class="text-xs sm:text-sm text-blue-100 mt-1">cursos indexados</div>
+        </div>
+        <div>
+          <div class="text-3xl sm:text-4xl font-bold text-amber-300">34k</div>
+          <div class="text-xs sm:text-sm text-blue-100 mt-1">chunks vetoriais</div>
+        </div>
+        <div>
+          <div class="text-3xl sm:text-4xl font-bold text-amber-300">5</div>
+          <div class="text-xs sm:text-sm text-blue-100 mt-1">endpoints CEFIS</div>
+        </div>
+        <div>
+          <div class="text-3xl sm:text-4xl font-bold text-amber-300">10/10</div>
+          <div class="text-xs sm:text-sm text-blue-100 mt-1">testes E2E</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diferenciais -->
+  <section class="py-16 sm:py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm tracking-wider uppercase mb-2">Diferenciais</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">O que torna esse tutor diferente</h2>
+        <p class="text-slate-600 dark:text-slate-400 mt-3 max-w-2xl mx-auto">Seis recursos que mudam a forma como o aluno aprende com IA.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Card: Roleplay -->
+        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border border-purple-100 dark:border-purple-800 rounded-2xl p-6">
+          <div class="text-4xl mb-3">🎭</div>
+          <h3 class="text-lg font-bold mb-2">Roleplay aplicado</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Pratique apresentar PDCA para o CFO cetico, defender em auditoria ou negociar com cliente. A IA interpreta o personagem e da feedback estruturado.</p>
+        </div>
+
+        <!-- Card: RAG -->
+        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border border-blue-100 dark:border-blue-800 rounded-2xl p-6">
+          <div class="text-4xl mb-3">🧠</div>
+          <h3 class="text-lg font-bold mb-2">RAG por segundo da aula</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">7.447 transcricoes indexadas em 34.422 chunks vetoriais. O chat cita curso, aula e segundo exato — clicavel.</p>
+        </div>
+
+        <!-- Card: Voz -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-100 dark:border-emerald-800 rounded-2xl p-6">
+          <div class="text-4xl mb-3">🎤</div>
+          <h3 class="text-lg font-bold mb-2">Chat por voz hands-free</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Fala a pergunta, o tutor responde em audio. Estudo no carro, no onibus, durante um treino — sem precisar olhar pra tela.</p>
+        </div>
+
+        <!-- Card: Mestria -->
+        <div class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-100 dark:border-amber-800 rounded-2xl p-6">
+          <div class="text-4xl mb-3">🎓</div>
+          <h3 class="text-lg font-bold mb-2">Trajetoria de Mestria</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Conceito dominado = aula concluida + quiz ≥80%. Metrica de retencao real, com insights automaticos sobre seu padrao de estudo.</p>
+        </div>
+
+        <!-- Card: Tutor contextual -->
+        <div class="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/30 dark:to-rose-900/30 border border-pink-100 dark:border-pink-800 rounded-2xl p-6">
+          <div class="text-4xl mb-3">💬</div>
+          <h3 class="text-lg font-bold mb-2">Tutor contextual</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">A mensagem do tutor cita pelo nome o que voce ja dominou e apresenta a sessao em 2-3 frases. Audio toca automaticamente.</p>
+        </div>
+
+        <!-- Card: Sessao recorrente -->
+        <div class="bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
+          <div class="text-4xl mb-3">➕</div>
+          <h3 class="text-lg font-bold mb-2">Sessao "tenho X min agora"</h3>
+          <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Informe o tempo que voce tem agora. O plano se ajusta, pula o que voce ja viu e respeita seu objetivo. Trilha evolutiva por fase.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Como funciona -->
+  <section class="py-16 sm:py-20 px-6 bg-slate-50 dark:bg-slate-900">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm tracking-wider uppercase mb-2">Como funciona</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">Em 4 passos voce ja esta estudando</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 border border-slate-200 rounded-2xl p-6 relative">
+          <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full gradient-bg text-white font-bold flex items-center justify-center">1</div>
+          <div class="text-3xl mb-2 mt-2">📝</div>
+          <h3 class="font-bold mb-2">Onboarding curto</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Nome, areas de interesse, objetivo livre, nivel e quanto tempo voce tem.</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 border border-slate-200 rounded-2xl p-6 relative">
+          <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full gradient-bg text-white font-bold flex items-center justify-center">2</div>
+          <div class="text-3xl mb-2 mt-2">📚</div>
+          <h3 class="font-bold mb-2">Escolha de cursos</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400">12 cursos relevantes ao seu objetivo. Selecione os que quiser ou use uma trilha oficial CEFIS.</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 border border-slate-200 rounded-2xl p-6 relative">
+          <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full gradient-bg text-white font-bold flex items-center justify-center">3</div>
+          <div class="text-3xl mb-2 mt-2">🎯</div>
+          <h3 class="font-bold mb-2">Plano gerado</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Aulas reais + resumos da IA cronometrados para o seu tempo. Mensagem do tutor explicando a sessao.</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 dark:border-slate-700 border border-slate-200 rounded-2xl p-6 relative">
+          <div class="absolute -top-3 -left-3 w-10 h-10 rounded-full gradient-bg text-white font-bold flex items-center justify-center">4</div>
+          <div class="text-3xl mb-2 mt-2">🚀</div>
+          <h3 class="font-bold mb-2">Estude, pratique, evolua</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Quiz por aula, chat com fontes, roleplay aplicado, audio em tudo. Cada conceito dominado entra na sua trajetoria.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Galeria -->
+  <section class="py-16 sm:py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-10">
+        <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm tracking-wider uppercase mb-2">Telas</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">Veja como e o produto</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/05-plano-chat.png" alt="Plano e chat" class="w-full" onerror="this.style.display='none'" />
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/11-roleplay-simulacao.png" alt="Roleplay" class="w-full" onerror="this.style.display='none'" />
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/14-mestria-insights.png" alt="Trajetoria de Mestria" class="w-full" onerror="this.style.display='none'" />
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/07-quiz.png" alt="Quiz" class="w-full" onerror="this.style.display='none'" />
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/09-welcome.png" alt="Welcome" class="w-full" onerror="this.style.display='none'" />
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition">
+          <img src="/static/screenshots/15-loading-dinamico.png" alt="Loading dinamico" class="w-full" onerror="this.style.display='none'" />
+        </div>
+      </div>
+      <p class="text-center text-xs text-slate-500 dark:text-slate-400 mt-4">Mais prints no <a href="https://github.com/CarlosLimaBR/CEFIS-Hackathon#-galeria-de-telas" target="_blank" class="underline">README do repositorio</a>.</p>
+    </div>
+  </section>
+
+  <!-- Stack -->
+  <section class="py-16 px-6 bg-slate-50 dark:bg-slate-900">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-10">
+        <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm tracking-wider uppercase mb-2">Stack</p>
+        <h2 class="text-3xl sm:text-4xl font-bold">Tecnologia por baixo do capô</h2>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">🐍</div>
+          <div class="text-sm font-semibold">Python 3.11</div>
+          <div class="text-xs text-slate-500">+ FastAPI</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">💾</div>
+          <div class="text-sm font-semibold">SQLite</div>
+          <div class="text-xs text-slate-500">+ sqlite-vec</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">🤖</div>
+          <div class="text-sm font-semibold">OpenAI</div>
+          <div class="text-xs text-slate-500">gpt-4o-mini + tts-1</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">⚡</div>
+          <div class="text-sm font-semibold">Tailwind + Alpine</div>
+          <div class="text-xs text-slate-500">Zero build</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">🪟</div>
+          <div class="text-sm font-semibold">Windows + IIS</div>
+          <div class="text-xs text-slate-500">+ nssm</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <div class="text-3xl mb-2">🔒</div>
+          <div class="text-sm font-semibold">Let's Encrypt</div>
+          <div class="text-xs text-slate-500">HTTPS valido</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integracao CEFIS -->
+  <section class="py-16 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm tracking-wider uppercase mb-2">Integracao real</p>
+      <h2 class="text-3xl sm:text-4xl font-bold mb-3">5 endpoints da API CEFIS conectados</h2>
+      <p class="text-slate-600 dark:text-slate-400 mb-8">O tutor consome dados reais da plataforma para personalizar a experiencia.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-sm">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4"><code class="text-xs text-blue-700 dark:text-blue-400">POST /api/v1/login</code><p class="text-slate-600 dark:text-slate-400 mt-1">Autenticacao do aluno</p></div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4"><code class="text-xs text-blue-700 dark:text-blue-400">GET /api/v1/user/me</code><p class="text-slate-600 dark:text-slate-400 mt-1">Nome, ocupacao, areas, premium</p></div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4"><code class="text-xs text-blue-700 dark:text-blue-400">GET /performance/certificates</code><p class="text-slate-600 dark:text-slate-400 mt-1">Pula cursos ja certificados</p></div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4"><code class="text-xs text-blue-700 dark:text-blue-400">GET /tracks</code><p class="text-slate-600 dark:text-slate-400 mt-1">20 trilhas oficiais curadas</p></div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 sm:col-span-2"><code class="text-xs text-blue-700 dark:text-blue-400">GET /courses/:id/lessons</code><p class="text-slate-600 dark:text-slate-400 mt-1">Progresso real por aula — "continue de onde parou"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section class="gradient-bg text-white py-20 px-6 text-center relative overflow-hidden">
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-amber-400/10 rounded-full"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-400/10 rounded-full"></div>
+    <div class="max-w-2xl mx-auto relative">
+      <h2 class="text-3xl sm:text-5xl font-bold mb-5">Pronto para comecar?</h2>
+      <p class="text-blue-100 text-lg mb-8">Em 3 minutos voce monta sua trilha e ja comeca a estudar.</p>
+      <button @click="iniciarTutor()" class="px-8 py-4 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-xl shadow-2xl transition text-lg">
+        Iniciar o tutor agora →
+      </button>
+      <p class="text-blue-200 text-xs mt-4">Sem cadastro obrigatorio. Login CEFIS opcional para personalizar com seus dados reais.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 px-6 bg-slate-900 text-slate-300 text-sm">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-7 h-7" />
+        <span>Tutor IA CEFIS · Hackathon de Inovacao em Aprendizado · 26 de maio de 2026</span>
+      </div>
+      <div class="flex gap-4">
+        <a href="https://github.com/CarlosLimaBR/CEFIS-Hackathon" target="_blank" class="hover:text-white">GitHub</a>
+        <a href="https://tutor-cefis.duckdns.org" target="_blank" class="hover:text-white">Producao</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
 <!-- ================== WELCOME (aluno que volta) ================== -->
 <div x-show="tela === 'welcome'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
   <div class="w-full max-w-xl">
@@ -1543,15 +1819,29 @@ function app() {
         if (this.status.ready) {
           clearInterval(this.statusTimer);
           if (this.tela === 'indexando') {
-            // Se ja tem historico, vai para welcome em vez do onboarding
-            this.tela = (this.historico.planos && this.historico.planos.length > 0)
-              ? 'welcome'
-              : 'onboarding';
+            // Roteamento inicial:
+            // - se aluno tem historico: vai pra welcome
+            // - senao: mostra landing page (a menos que ja tenha clicado em "iniciar")
+            const lpVista = localStorage.getItem('cefis_lp_vista') === '1';
+            const temHistorico = this.historico.planos && this.historico.planos.length > 0;
+            if (temHistorico) this.tela = 'welcome';
+            else if (!lpVista) this.tela = 'landing';
+            else this.tela = 'onboarding';
           }
         }
       } catch (e) {
         console.warn('status falhou', e);
       }
+    },
+
+    iniciarTutor() {
+      try { localStorage.setItem('cefis_lp_vista', '1'); } catch (e) {}
+      const temHistorico = this.historico.planos && this.historico.planos.length > 0;
+      this.tela = temHistorico ? 'welcome' : 'onboarding';
+    },
+
+    voltarLanding() {
+      this.tela = 'landing';
     },
 
     continuarUltimaSessao() {

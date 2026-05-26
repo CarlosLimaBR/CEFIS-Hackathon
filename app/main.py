@@ -85,10 +85,12 @@ class OnboardingRequest(BaseModel):
     level: str = Field(..., pattern="^(Iniciante|Intermediario|Avancado)$")
     minutes: int = Field(..., ge=10, le=2400)
     # Filtros opcionais (trilha personalizada / multi-fase)
-    course_ids: list[int] | None = Field(default=None)  # se preenchido, restringe aos escolhidos
-    exclude_lesson_ids: list[int] = Field(default_factory=list)  # ja vistas
-    exclude_course_ids: list[int] = Field(default_factory=list)  # ja concluidas
-    phase: int = Field(default=1, ge=1, le=10)  # 1 = inicial, 2+ = aprofundamento
+    course_ids: list[int] | None = Field(default=None)
+    exclude_lesson_ids: list[int] = Field(default_factory=list)
+    exclude_course_ids: list[int] = Field(default_factory=list)
+    phase: int = Field(default=1, ge=1, le=10)
+    # Historico do localStorage para o diagnostico ser contextual
+    historico_resumo: dict | None = Field(default=None)
 
 
 class CoursesSearchRequest(BaseModel):
@@ -367,6 +369,8 @@ async def onboarding(
             **extra_profile,
         },
         "objetivo": req.goal,
+        "fase_da_sessao": req.phase,
+        "historico_aluno": req.historico_resumo or {},
         "aulas_em_andamento": in_progress_lessons[:5] if in_progress_lessons else [],
         "cursos_disponiveis": [
             {

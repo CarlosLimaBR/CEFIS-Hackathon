@@ -1621,6 +1621,22 @@ function app() {
 
       const phase = nextPhase ? this.faseAtual + 1 : 1;
 
+      // Monta resumo do historico para o diagnostico ficar contextual
+      const conceitosRecentes = (this.historico.conceitos_dominados || [])
+        .slice(-5)
+        .reverse()
+        .map(c => ({ titulo: c.lesson_title, curso: c.course_title }));
+      const historicoResumo = {
+        total_aulas: (this.historico.lessons_concluidas || []).length,
+        total_sessoes: (this.historico.planos || []).length,
+        total_conceitos_dominados: (this.historico.conceitos_dominados || []).length,
+        conceitos_dominados: conceitosRecentes,
+        ultima_fase: this.faseAtual,
+        objetivos_passados: Array.from(new Set(
+          (this.historico.planos || []).slice(-3).map(p => p.goal).filter(Boolean)
+        )),
+      };
+
       try {
         const payload = {
           ...this.perfil,
@@ -1628,6 +1644,7 @@ function app() {
           exclude_lesson_ids: this.historico.lessons_concluidas || [],
           exclude_course_ids: this.historico.cursos_concluidos || [],
           phase,
+          historico_resumo: historicoResumo,
         };
         const r = await fetch('/api/onboarding', {
           method: 'POST',

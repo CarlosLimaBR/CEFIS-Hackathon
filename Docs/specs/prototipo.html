@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Tutor IA CEFIS — Prototipo Visual</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%); }
+    .card-hover { transition: transform 0.15s, box-shadow 0.15s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .typing-dot { animation: pulse-dot 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<!-- Navegacao entre telas do prototipo -->
+<div x-data="{ tela: 'onboarding' }" class="min-h-screen">
+
+  <!-- Barra do prototipo (so existe no mockup, nao na app real) -->
+  <div class="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <span class="text-amber-900 font-medium">Prototipo Visual — Tutor IA CEFIS</span>
+      <div class="flex gap-2">
+        <button @click="tela='onboarding'" :class="tela==='onboarding' ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-300'" class="px-3 py-1 rounded text-xs font-medium">1. Onboarding</button>
+        <button @click="tela='loading'" :class="tela==='loading' ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-300'" class="px-3 py-1 rounded text-xs font-medium">2. Gerando plano</button>
+        <button @click="tela='plano'" :class="tela==='plano' ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-300'" class="px-3 py-1 rounded text-xs font-medium">3. Plano + Chat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== TELA 1: ONBOARDING ================== -->
+  <template x-if="tela === 'onboarding'">
+    <div class="min-h-[calc(100vh-44px)] gradient-bg flex items-center justify-center p-4" x-data="{
+      passo: 1,
+      perfil: { nome: '', area: [], objetivo: '', nivel: '', minutos: 60 },
+      areas: [
+        { id: 1, nome: 'Contabilidade' },
+        { id: 2, nome: 'Direito' },
+        { id: 3, nome: 'Financas' },
+        { id: 4, nome: 'Gestao' },
+        { id: 5, nome: 'RH' },
+        { id: 6, nome: 'Marketing' },
+        { id: 7, nome: 'Tecnologia' }
+      ],
+      toggleArea(id) {
+        const i = this.perfil.area.indexOf(id);
+        if (i > -1) this.perfil.area.splice(i, 1);
+        else this.perfil.area.push(id);
+      },
+      podeAvancar() {
+        if (this.passo === 1) return this.perfil.nome.trim() && this.perfil.area.length > 0;
+        if (this.passo === 2) return this.perfil.objetivo.trim().length > 10;
+        if (this.passo === 3) return this.perfil.nivel;
+        return false;
+      },
+      formatMin(m) {
+        if (m < 60) return m + ' min';
+        const h = Math.floor(m / 60);
+        const r = m % 60;
+        return r ? `${h}h ${r}min` : `${h}h`;
+      }
+    }">
+
+      <div class="w-full max-w-2xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center gap-2 text-white/90 mb-2">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span class="text-2xl font-bold">CEFIS</span>
+          </div>
+          <h1 class="text-3xl font-bold text-white">Seu tutor pessoal de aprendizado</h1>
+          <p class="text-blue-100 mt-2">Em 3 passos, vamos montar um plano sob medida pra voce.</p>
+        </div>
+
+        <!-- Card do wizard -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+          <!-- Barra de progresso -->
+          <div class="flex items-center gap-2 mb-8">
+            <template x-for="n in 3" :key="n">
+              <div class="flex-1 flex items-center gap-2">
+                <div :class="passo >= n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition">
+                  <span x-text="n"></span>
+                </div>
+                <div x-show="n < 3" :class="passo > n ? 'bg-blue-600' : 'bg-slate-200'" class="h-1 flex-1 rounded transition"></div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Passo 1: nome + area -->
+          <div x-show="passo === 1">
+            <h2 class="text-xl font-bold mb-1">Vamos comecar pelo basico</h2>
+            <p class="text-slate-500 text-sm mb-6">Conte um pouco sobre voce.</p>
+
+            <label class="block">
+              <span class="text-sm font-medium text-slate-700">Como podemos te chamar?</span>
+              <input x-model="perfil.nome" type="text" placeholder="Seu primeiro nome" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border">
+            </label>
+
+            <div class="mt-6">
+              <span class="text-sm font-medium text-slate-700 block mb-2">Em que areas voce tem interesse? (pode escolher mais de uma)</span>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <template x-for="a in areas" :key="a.id">
+                  <button @click="toggleArea(a.id)" :class="perfil.area.includes(a.id) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'" class="border rounded-lg px-3 py-2 text-sm font-medium transition" x-text="a.nome"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Passo 2: objetivo -->
+          <div x-show="passo === 2">
+            <h2 class="text-xl font-bold mb-1">Qual e o seu objetivo?</h2>
+            <p class="text-slate-500 text-sm mb-6">Escreva livremente. Quanto mais especifico, melhor o plano.</p>
+
+            <textarea x-model="perfil.objetivo" rows="5" placeholder="Ex.: Quero passar na prova do CRC. Ou: tenho 10 minutos por dia e quero entender o maximo possivel de gestao de processos." class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border"></textarea>
+
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-900 flex gap-3">
+              <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Quanto mais concreto for o objetivo (prazo, prova, projeto), mais preciso o plano. Voce pode revisar depois.</span>
+            </div>
+          </div>
+
+          <!-- Passo 3: nivel + tempo -->
+          <div x-show="passo === 3">
+            <h2 class="text-xl font-bold mb-1">Ultimo passo</h2>
+            <p class="text-slate-500 text-sm mb-6">Seu nivel atual e quanto tempo voce tem.</p>
+
+            <div class="mb-6">
+              <span class="text-sm font-medium text-slate-700 block mb-2">Como voce avalia seu conhecimento na area?</span>
+              <div class="grid grid-cols-3 gap-2">
+                <template x-for="nv in ['Iniciante','Intermediario','Avancado']" :key="nv">
+                  <button @click="perfil.nivel = nv" :class="perfil.nivel === nv ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'" class="border rounded-lg px-3 py-3 text-sm font-medium transition" x-text="nv"></button>
+                </template>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-slate-700">Quanto tempo voce tem para estudar?</span>
+                <span class="text-blue-600 font-semibold" x-text="formatMin(perfil.minutos)"></span>
+              </div>
+              <input type="range" x-model.number="perfil.minutos" min="10" max="2400" step="10" class="w-full accent-blue-600">
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
+                <span>10 min</span>
+                <span>10h</span>
+                <span>40h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navegacao -->
+          <div class="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+            <button @click="passo--" x-show="passo > 1" class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium">← Voltar</button>
+            <div x-show="passo === 1"></div>
+            <button @click="passo < 3 ? passo++ : tela='loading'" :disabled="!podeAvancar()" :class="podeAvancar() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'" class="ml-auto px-6 py-2.5 rounded-lg font-medium transition">
+              <span x-show="passo < 3">Continuar →</span>
+              <span x-show="passo === 3">Gerar meu plano ✨</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="text-center text-blue-100 text-xs mt-6">Ja tem conta CEFIS? <a href="#" class="text-white underline">Entre para usar seu progresso real</a></p>
+      </div>
+    </div>
+  </template>
+
+  <!-- ================== TELA 2: LOADING ================== -->
+  <template x-if="tela === 'loading'">
+    <div class="min-h-[calc(100vh-44px)] gradient-bg flex items-center justify-center p-4" x-data="{
+      etapa: 0,
+      etapas: [
+        { titulo: 'Analisando seu objetivo', icone: '🎯' },
+        { titulo: 'Buscando cursos no catalogo CEFIS', icone: '📚' },
+        { titulo: 'Identificando lacunas de conhecimento', icone: '🔍' },
+        { titulo: 'Montando seu plano personalizado', icone: '✨' }
+      ],
+      init() {
+        const tick = () => {
+          if (this.etapa < this.etapas.length - 1) {
+            this.etapa++;
+            setTimeout(tick, 1600);
+          } else {
+            setTimeout(() => { tela = 'plano'; }, 1500);
+          }
+        };
+        setTimeout(tick, 1200);
+      }
+    }">
+      <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <div class="text-center mb-8">
+          <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </div>
+          <h2 class="text-2xl font-bold">Preparando seu tutor</h2>
+          <p class="text-slate-500 mt-1 text-sm">Isso leva alguns segundos.</p>
+        </div>
+
+        <div class="space-y-3">
+          <template x-for="(e, i) in etapas" :key="i">
+            <div :class="i <= etapa ? 'bg-blue-50' : 'bg-slate-50'" class="flex items-center gap-3 p-3 rounded-lg transition">
+              <div class="text-2xl" x-text="e.icone"></div>
+              <span class="flex-1 text-sm font-medium" :class="i <= etapa ? 'text-blue-900' : 'text-slate-400'" x-text="e.titulo"></span>
+              <div x-show="i < etapa" class="text-green-600">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              </div>
+              <div x-show="i === etapa" class="flex gap-1">
+                <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+                <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+                <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ================== TELA 3: PLANO + CHAT ================== -->
+  <template x-if="tela === 'plano'">
+    <div class="min-h-[calc(100vh-44px)] bg-slate-50" x-data="{
+      mostrarChat: true,
+      perguntaChat: '',
+      conversas: [
+        { tipo: 'tutor', texto: 'Oi! Eu sou seu tutor CEFIS. Posso responder duvidas sobre qualquer aula do plano. Cito sempre a fonte (curso, aula, segundo).' }
+      ],
+      plano: [
+        { id: 1126, titulo: 'Gestao de Processos — Introducao', professor: 'Lucas Marques', duracao: 15, motivo: 'Base conceitual para todo o resto do plano.', categoria: 'Gestao', concluido: false, tipo: 'aula' },
+        { id: 0, titulo: 'Resumo executivo: PDCA e DMAIC', professor: 'Gerado pela IA', duracao: 8, motivo: 'Sintese rapida para fixar antes da proxima aula.', categoria: 'IA', concluido: false, tipo: 'resumo' },
+        { id: 1132, titulo: 'Negociacao baseada em principios', professor: 'Lucas Marques', duracao: 22, motivo: 'Aplicacao pratica em gestao de processos.', categoria: 'Gestao', concluido: false, tipo: 'aula' },
+        { id: 1205, titulo: 'Ferramentas de Benchmark', professor: 'Maria Souza', duracao: 18, motivo: 'Como medir resultados depois de aplicar PDCA.', categoria: 'Gestao', concluido: false, tipo: 'aula' },
+        { id: 0, titulo: 'Quiz: 5 perguntas para fixar', professor: 'Gerado pela IA', duracao: 5, motivo: 'Verifica retencao dos conceitos.', categoria: 'IA', concluido: false, tipo: 'quiz' }
+      ],
+      perguntaSugerida(p) {
+        this.perguntaChat = p;
+        this.enviarPergunta();
+      },
+      enviarPergunta() {
+        const q = this.perguntaChat.trim();
+        if (!q) return;
+        this.conversas.push({ tipo: 'aluno', texto: q });
+        this.perguntaChat = '';
+        // mock de resposta com citacao
+        setTimeout(() => {
+          this.conversas.push({
+            tipo: 'tutor',
+            texto: 'PDCA significa Plan, Do, Check, Act. E um ciclo de melhoria continua: voce planeja a mudanca, executa em pequena escala, verifica os resultados e age para padronizar ou ajustar.',
+            fontes: [
+              { curso: 'Gestao de Processos', aula: 'Introducao ao PDCA', segundo: 142 },
+              { curso: 'Gestao de Processos', aula: 'Aplicando PDCA na pratica', segundo: 47 }
+            ]
+          });
+        }, 800);
+      },
+      duracaoTotal() {
+        return this.plano.reduce((s, p) => s + p.duracao, 0);
+      },
+      concluidos() {
+        return this.plano.filter(p => p.concluido).length;
+      },
+      formatTempo(m) {
+        if (m < 60) return m + ' min';
+        const h = Math.floor(m / 60);
+        const r = m % 60;
+        return r ? `${h}h ${r}min` : `${h}h`;
+      }
+    }">
+
+      <!-- Top bar -->
+      <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-[44px] z-10">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg gradient-bg flex items-center justify-center text-white font-bold">C</div>
+            <div>
+              <div class="font-bold text-sm">Tutor CEFIS</div>
+              <div class="text-xs text-slate-500">Plano personalizado de Carlos</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="hidden sm:block text-right">
+              <div class="text-xs text-slate-500">Progresso</div>
+              <div class="font-semibold text-sm" x-text="`${concluidos()}/${plano.length} (${formatTempo(duracaoTotal())})`"></div>
+            </div>
+            <button class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Regenerar plano</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <!-- Diagnostico + Plano -->
+        <div class="lg:col-span-3 space-y-4">
+          <!-- Diagnostico -->
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl">🎯</div>
+              <div class="flex-1">
+                <h2 class="font-bold text-blue-900 mb-1">Diagnostico</h2>
+                <p class="text-sm text-blue-900/90 leading-relaxed">
+                  Voce ja tem familiaridade com conceitos basicos de gestao, mas seu objetivo
+                  ("aplicar melhoria continua na minha equipe") exige aprofundamento em <strong>ciclos PDCA/DMAIC</strong>,
+                  <strong>medicao de resultados</strong> e <strong>tecnicas de benchmark</strong>.
+                  Em <strong x-text="formatTempo(duracaoTotal())"></strong> de estudo, voce sai com fundamentos
+                  solidos e 1 quiz para fixar.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cabecalho do plano -->
+          <div class="flex items-baseline justify-between">
+            <h2 class="text-lg font-bold">Seu plano de estudos</h2>
+            <span class="text-xs text-slate-500" x-text="`${plano.length} itens • ${formatTempo(duracaoTotal())}`"></span>
+          </div>
+
+          <!-- Cards -->
+          <div class="space-y-3">
+            <template x-for="(item, i) in plano" :key="i">
+              <div class="card-hover bg-white rounded-xl border border-slate-200 p-4">
+                <div class="flex items-start gap-3">
+                  <button @click="item.concluido = !item.concluido" :class="item.concluido ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-blue-400'" class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition">
+                    <svg x-show="item.concluido" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </button>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-xs font-semibold px-2 py-0.5 rounded" :class="item.tipo === 'aula' ? 'bg-blue-100 text-blue-700' : item.tipo === 'resumo' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'" x-text="item.tipo === 'aula' ? '🎬 Aula CEFIS' : item.tipo === 'resumo' ? '📝 Resumo IA' : '❓ Quiz'"></span>
+                      <span class="text-xs text-slate-500" x-text="formatTempo(item.duracao)"></span>
+                    </div>
+                    <h3 class="font-semibold text-sm leading-tight" :class="item.concluido ? 'line-through text-slate-400' : ''" x-text="item.titulo"></h3>
+                    <p class="text-xs text-slate-500 mt-0.5" x-text="item.professor"></p>
+                    <p class="text-xs text-slate-600 mt-2 italic">💡 <span x-text="item.motivo"></span></p>
+                  </div>
+                  <button x-show="item.tipo === 'aula'" class="text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap">
+                    Assistir →
+                  </button>
+                  <button x-show="item.tipo !== 'aula'" class="text-xs font-semibold text-purple-600 hover:text-purple-800 whitespace-nowrap">
+                    Abrir →
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Chat lateral -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-[120px]">
+            <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white text-sm font-bold">🤖</div>
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Tire suas duvidas</div>
+                <div class="text-xs text-slate-500">Respondo com base nas aulas reais da CEFIS</div>
+              </div>
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+
+            <!-- Mensagens -->
+            <div class="h-96 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+              <template x-for="(msg, i) in conversas" :key="i">
+                <div :class="msg.tipo === 'aluno' ? 'flex justify-end' : 'flex justify-start'">
+                  <div :class="msg.tipo === 'aluno' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'" class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm">
+                    <p x-text="msg.texto"></p>
+                    <div x-show="msg.fontes" class="mt-3 pt-3 border-t border-slate-300/50 space-y-1.5">
+                      <p class="text-xs font-semibold text-slate-700">Fontes:</p>
+                      <template x-for="f in msg.fontes" :key="f.aula">
+                        <a href="#" class="block text-xs text-blue-700 hover:underline">
+                          📎 <span x-text="f.curso"></span> — <span x-text="f.aula"></span>
+                          <span class="text-slate-500" x-text="`(${Math.floor(f.segundo/60)}:${String(f.segundo%60).padStart(2,'0')})`"></span>
+                        </a>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Sugestoes (so quando ainda nao tem conversa) -->
+            <div x-show="conversas.length === 1" class="px-4 pb-3 border-t border-slate-100 pt-3">
+              <p class="text-xs text-slate-500 mb-2">Sugestoes:</p>
+              <div class="flex flex-wrap gap-1.5">
+                <button @click="perguntaSugerida('O que e PDCA?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-full px-3 py-1 transition">O que e PDCA?</button>
+                <button @click="perguntaSugerida('Diferenca entre PDCA e DMAIC')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-full px-3 py-1 transition">PDCA vs DMAIC</button>
+                <button @click="perguntaSugerida('Como aplicar benchmark?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-full px-3 py-1 transition">Como aplicar benchmark?</button>
+              </div>
+            </div>
+
+            <!-- Input -->
+            <form @submit.prevent="enviarPergunta()" class="border-t border-slate-200 p-3 flex gap-2">
+              <input x-model="perguntaChat" type="text" placeholder="Digite sua duvida..." class="flex-1 text-sm rounded-lg border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border">
+              <button type="submit" :disabled="!perguntaChat.trim()" :class="perguntaChat.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400'" class="px-4 rounded-lg font-medium transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </template>
+
+</div>
+
+</body>
+</html>

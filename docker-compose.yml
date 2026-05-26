@@ -1,0 +1,35 @@
+# =============================================================
+# Tutor IA CEFIS - "instala em qualquer servidor"
+# Uso: docker compose up -d
+# =============================================================
+
+services:
+  tutor:
+    build: .
+    image: tutor-cefis:latest
+    container_name: tutor-cefis
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Catalogo extraido (so leitura)
+      - ./Docs/output:/app/Docs/output:ro
+      # Indice persistente (SQLite + sqlite-vec)
+      - ./data:/app/data
+
+  # Job one-shot: indexa as transcricoes em SQLite.
+  # Rode antes do servico tutor:
+  #     docker compose run --rm indexer
+  indexer:
+    image: tutor-cefis:latest
+    build: .
+    container_name: tutor-cefis-indexer
+    profiles: ["index"]
+    env_file:
+      - .env
+    volumes:
+      - ./Docs/output:/app/Docs/output:ro
+      - ./data:/app/data
+    command: ["python", "scripts/index_transcripts.py"]

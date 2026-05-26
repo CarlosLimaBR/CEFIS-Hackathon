@@ -1,8 +1,10 @@
 # Credenciais e segredos
 credenciais.txt
-*.env
 .env
-.env.*
+.env.local
+.env.production
+.env.*.local
+!.env.example
 secrets.json
 appsettings.*.Development.json
 
@@ -26,6 +28,21 @@ build/
 node_modules/
 packages/
 *.nupkg
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Dados gerados (mantem so a pasta vazia)
+data/*
+!data/.gitkeep
+
+# Bundle pesado (mantemos so o courses.zip, nao o output extraido)
+Docs/output/
+Docs/Logos.zip
 
 # Logs e temporarios
 *.log

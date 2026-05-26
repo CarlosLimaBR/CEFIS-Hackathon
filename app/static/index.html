@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Tutor IA CEFIS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/static/simbolo-solo-cefis.svg" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%); }
+    .card-hover { transition: transform 0.15s, box-shadow 0.15s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .typing-dot { animation: pulse-dot 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased" x-data="app()" x-init="init()" x-cloak>
+
+<!-- ================== TELA DE INDEXACAO ================== -->
+<div x-show="tela === 'indexando'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+    <div class="text-center mb-6">
+      <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      </div>
+      <h2 class="text-2xl font-bold">Preparando o tutor</h2>
+      <p class="text-slate-500 mt-1 text-sm">Indexando transcricoes das aulas CEFIS...</p>
+    </div>
+    <div class="bg-slate-100 rounded-full h-2 overflow-hidden mb-2">
+      <div class="gradient-bg h-full transition-all" :style="`width: ${Math.round((status.embeddings||0)/(status.chunks||1)*100)}%`"></div>
+    </div>
+    <div class="text-xs text-slate-500 text-center">
+      <span x-text="status.embeddings || 0"></span> / <span x-text="status.chunks || 0"></span> chunks processados
+    </div>
+    <p class="text-xs text-slate-400 text-center mt-4">Esta tela atualiza sozinha a cada 5s.</p>
+  </div>
+</div>
+
+<!-- ================== ONBOARDING ================== -->
+<div x-show="tela === 'onboarding'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl">
+    <div class="text-center mb-8">
+      <img src="/static/logo-cefis-w.svg" alt="CEFIS" class="h-10 mx-auto mb-4" />
+      <h1 class="text-3xl font-bold text-white">Seu tutor pessoal de aprendizado</h1>
+      <p class="text-blue-100 mt-2">Em 3 passos, montamos um plano sob medida pra voce.</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <div class="flex items-center gap-2 mb-8">
+        <template x-for="n in 3" :key="n">
+          <div class="flex-1 flex items-center gap-2">
+            <div :class="passo >= n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition">
+              <span x-text="n"></span>
+            </div>
+            <div x-show="n < 3" :class="passo > n ? 'bg-blue-600' : 'bg-slate-200'" class="h-1 flex-1 rounded transition"></div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Passo 1 -->
+      <div x-show="passo === 1">
+        <h2 class="text-xl font-bold mb-1">Vamos comecar pelo basico</h2>
+        <p class="text-slate-500 text-sm mb-6">Conte um pouco sobre voce.</p>
+        <label class="block">
+          <span class="text-sm font-medium text-slate-700">Como podemos te chamar?</span>
+          <input x-model="perfil.name" type="text" placeholder="Seu primeiro nome" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border">
+        </label>
+        <div class="mt-6">
+          <span class="text-sm font-medium text-slate-700 block mb-2">Em que areas voce tem interesse? (pode escolher mais de uma)</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <template x-for="a in areas" :key="a.id">
+              <button @click="toggleArea(a.id)" :class="perfil.areas.includes(a.id) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'" class="border rounded-lg px-3 py-2 text-sm font-medium transition" x-text="a.nome"></button>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passo 2 -->
+      <div x-show="passo === 2">
+        <h2 class="text-xl font-bold mb-1">Qual e o seu objetivo?</h2>
+        <p class="text-slate-500 text-sm mb-6">Escreva livremente. Quanto mais especifico, melhor o plano.</p>
+        <textarea x-model="perfil.goal" rows="5" placeholder="Ex.: Quero passar na prova do CRC. Ou: tenho 10 minutos por dia e quero entender o maximo possivel de gestao de processos." class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border"></textarea>
+        <div class="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-900 flex gap-3">
+          <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Quanto mais concreto for o objetivo (prazo, prova, projeto), mais preciso o plano.</span>
+        </div>
+      </div>
+
+      <!-- Passo 3 -->
+      <div x-show="passo === 3">
+        <h2 class="text-xl font-bold mb-1">Ultimo passo</h2>
+        <p class="text-slate-500 text-sm mb-6">Seu nivel atual e quanto tempo voce tem.</p>
+        <div class="mb-6">
+          <span class="text-sm font-medium text-slate-700 block mb-2">Como voce avalia seu conhecimento na area?</span>
+          <div class="grid grid-cols-3 gap-2">
+            <template x-for="nv in ['Iniciante','Intermediario','Avancado']" :key="nv">
+              <button @click="perfil.level = nv" :class="perfil.level === nv ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'" class="border rounded-lg px-3 py-3 text-sm font-medium transition" x-text="nv"></button>
+            </template>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-slate-700">Quanto tempo voce tem para estudar?</span>
+            <span class="text-blue-600 font-semibold" x-text="formatMin(perfil.minutes)"></span>
+          </div>
+          <input type="range" x-model.number="perfil.minutes" min="10" max="2400" step="10" class="w-full accent-blue-600">
+          <div class="flex justify-between text-xs text-slate-400 mt-1">
+            <span>10 min</span>
+            <span>10h</span>
+            <span>40h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+        <button @click="passo--" x-show="passo > 1" class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium">← Voltar</button>
+        <div x-show="passo === 1"></div>
+        <button @click="passo < 3 ? passo++ : gerarPlano()" :disabled="!podeAvancar() || carregando" :class="(podeAvancar() && !carregando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'" class="ml-auto px-6 py-2.5 rounded-lg font-medium transition">
+          <span x-show="passo < 3">Continuar →</span>
+          <span x-show="passo === 3 && !carregando">Gerar meu plano ✨</span>
+          <span x-show="carregando">Gerando...</span>
+        </button>
+      </div>
+
+      <!-- Status do login CEFIS -->
+      <div x-show="usuarioCefis" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-900">
+        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        <span class="flex-1">Conectado como <strong x-text="usuarioCefis?.name"></strong> <span x-show="usuarioCefis?.is_premium" class="ml-1 text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Premium</span></span>
+        <button @click="logoutCefis()" class="text-xs text-slate-500 hover:text-slate-700 underline">Sair</button>
+      </div>
+    </div>
+
+    <!-- Botao de login (so quando NAO logado) -->
+    <div x-show="!usuarioCefis" class="text-center mt-4">
+      <button @click="mostrarLogin = true" class="text-sm text-white/90 hover:text-white underline">
+        Ja tem conta CEFIS? Entre para personalizar com seu progresso real
+      </button>
+    </div>
+
+    <p x-show="erro" class="text-center text-red-100 text-sm mt-4 bg-red-900/50 rounded-lg p-2" x-text="erro"></p>
+  </div>
+
+  <!-- Modal de login -->
+  <div x-show="mostrarLogin" @click.self="mostrarLogin=false" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">Entrar na CEFIS</h3>
+        <button @click="mostrarLogin=false" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+      <form @submit.prevent="loginCefis()" class="space-y-3">
+        <label class="block">
+          <span class="text-xs font-medium text-slate-600">E-mail ou CPF</span>
+          <input x-model="loginForm.email" type="text" required class="mt-1 block w-full rounded-lg border-slate-300 px-3 py-2 border focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-slate-600">Senha</span>
+          <input x-model="loginForm.password" type="password" required class="mt-1 block w-full rounded-lg border-slate-300 px-3 py-2 border focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+        </label>
+        <p x-show="loginErro" class="text-xs text-red-600" x-text="loginErro"></p>
+        <button type="submit" :disabled="loginCarregando" :class="loginCarregando ? 'bg-slate-300' : 'bg-blue-600 hover:bg-blue-700'" class="w-full py-2.5 rounded-lg font-medium text-white transition">
+          <span x-show="!loginCarregando">Entrar</span>
+          <span x-show="loginCarregando">Entrando...</span>
+        </button>
+        <p class="text-xs text-slate-500 text-center mt-2">Suas credenciais vao direto para cefis.com.br. A gente so guarda a chave de sessao.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================== LOADING DO PLANO ================== -->
+<div x-show="tela === 'gerando'" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+    <div class="text-center mb-8">
+      <div class="inline-block w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      </div>
+      <h2 class="text-2xl font-bold">Montando seu plano</h2>
+      <p class="text-slate-500 mt-1 text-sm">Analisando catalogo + gerando diagnostico...</p>
+    </div>
+    <div class="space-y-3">
+      <template x-for="(e, i) in etapasLoading" :key="i">
+        <div :class="i <= etapaAtual ? 'bg-blue-50' : 'bg-slate-50'" class="flex items-center gap-3 p-3 rounded-lg transition">
+          <div class="text-2xl" x-text="e.icone"></div>
+          <span class="flex-1 text-sm font-medium" :class="i <= etapaAtual ? 'text-blue-900' : 'text-slate-400'" x-text="e.titulo"></span>
+          <div x-show="i < etapaAtual" class="text-green-600">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          </div>
+          <div x-show="i === etapaAtual" class="flex gap-1">
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+            <div class="w-1.5 h-1.5 bg-blue-600 rounded-full typing-dot"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+</div>
+
+<!-- ================== PLANO + CHAT ================== -->
+<div x-show="tela === 'plano'" class="min-h-screen bg-slate-50">
+  <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="/static/simbolo-solo-cefis.svg" alt="CEFIS" class="w-9 h-9" />
+        <div>
+          <div class="font-bold text-sm">Tutor CEFIS</div>
+          <div class="text-xs text-slate-500">Plano personalizado de <span x-text="perfil.name"></span></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:block text-right">
+          <div class="text-xs text-slate-500">Progresso</div>
+          <div class="font-semibold text-sm" x-text="`${concluidos()}/${plano.length} • ${formatMin(duracaoTotal())}`"></div>
+        </div>
+        <button @click="reiniciar()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Reiniciar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <div class="lg:col-span-3 space-y-4">
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl">🎯</div>
+          <div class="flex-1">
+            <h2 class="font-bold text-blue-900 mb-1">Diagnostico</h2>
+            <p class="text-sm text-blue-900/90 leading-relaxed" x-text="diagnostico"></p>
+            <p x-show="catalogGap" class="mt-2 text-xs text-amber-800 bg-amber-100 inline-block px-2 py-1 rounded">⚠️ O catalogo nao cobre 100% do seu objetivo. O plano combina aulas + resumos da IA.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-baseline justify-between">
+        <h2 class="text-lg font-bold">Seu plano de estudos</h2>
+        <span class="text-xs text-slate-500" x-text="`${plano.length} itens • ${formatMin(duracaoTotal())}`"></span>
+      </div>
+
+      <div class="space-y-3">
+        <template x-for="(item, i) in plano" :key="i">
+          <div class="card-hover bg-white rounded-xl border border-slate-200 p-4">
+            <div class="flex items-start gap-3">
+              <button @click="item.concluido = !item.concluido" :class="item.concluido ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-blue-400'" class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition">
+                <svg x-show="item.concluido" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded" :class="item.type === 'aula' ? 'bg-blue-100 text-blue-700' : item.type === 'resumo' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'" x-text="item.type === 'aula' ? '🎬 Aula CEFIS' : item.type === 'resumo' ? '📝 Resumo IA' : '❓ Quiz'"></span>
+                  <span class="text-xs text-slate-500" x-text="formatMin(item.duration_minutes)"></span>
+                  <span x-show="item.course_title" class="text-xs text-slate-400 truncate" x-text="'• ' + item.course_title"></span>
+                </div>
+                <h3 class="font-semibold text-sm leading-tight" :class="item.concluido ? 'line-through text-slate-400' : ''" x-text="item.title"></h3>
+                <p x-show="item.teacher" class="text-xs text-slate-500 mt-0.5" x-text="item.teacher"></p>
+                <p class="text-xs text-slate-600 mt-2 italic">💡 <span x-text="item.reason"></span></p>
+                <div x-show="item.type === 'resumo' && item.summary_content" class="mt-3 p-3 bg-purple-50 text-xs text-purple-900 rounded leading-relaxed" x-text="item.summary_content"></div>
+              </div>
+              <a x-show="item.type === 'aula' && item.course_url" :href="item.course_url" target="_blank" class="text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap">Assistir →</a>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-[88px]">
+        <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white text-sm font-bold">🤖</div>
+          <div class="flex-1">
+            <div class="font-semibold text-sm">Tire suas duvidas</div>
+            <div class="text-xs text-slate-500">Respondo com base nas aulas reais da CEFIS</div>
+          </div>
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+
+        <div class="h-96 overflow-y-auto p-4 space-y-3 scrollbar-thin" x-ref="chatBox">
+          <template x-for="(msg, i) in conversas" :key="i">
+            <div :class="msg.tipo === 'aluno' ? 'flex justify-end' : 'flex justify-start'">
+              <div :class="msg.tipo === 'aluno' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'" class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm">
+                <p style="white-space: pre-wrap;" x-text="msg.texto"></p>
+                <div x-show="msg.fontes && msg.fontes.length" class="mt-3 pt-3 border-t border-slate-300/50 space-y-1.5">
+                  <p class="text-xs font-semibold text-slate-700">Fontes:</p>
+                  <template x-for="f in msg.fontes" :key="f.lesson_id + '-' + f.segundo">
+                    <a :href="f.course_url" target="_blank" class="block text-xs text-blue-700 hover:underline">
+                      📎 <span x-text="f.curso"></span> — <span x-text="f.aula"></span>
+                      <span class="text-slate-500" x-text="`(${Math.floor(f.segundo/60)}:${String(f.segundo%60).padStart(2,'0')})`"></span>
+                    </a>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div x-show="chatDigitando" class="flex justify-start">
+            <div class="bg-slate-100 rounded-2xl px-4 py-3 text-sm flex gap-1">
+              <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+              <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <form @submit.prevent="enviarPergunta()" class="border-t border-slate-200 p-3 flex gap-2">
+          <input x-model="perguntaChat" type="text" placeholder="Digite sua duvida..." :disabled="chatDigitando" class="flex-1 text-sm rounded-lg border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 px-3 py-2 border disabled:bg-slate-100">
+          <button type="submit" :disabled="!perguntaChat.trim() || chatDigitando" :class="(perguntaChat.trim() && !chatDigitando) ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400'" class="px-4 rounded-lg font-medium transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function app() {
+  return {
+    tela: 'indexando',
+    status: { ready: false, chunks: 0, embeddings: 0 },
+    statusTimer: null,
+
+    // Login CEFIS (opcional)
+    usuarioCefis: null,
+    completedCourseIds: [],
+    mostrarLogin: false,
+    loginForm: { email: '', password: '' },
+    loginErro: '',
+    loginCarregando: false,
+
+    passo: 1,
+    perfil: { name: '', areas: [], goal: '', level: '', minutes: 60 },
+    areas: [
+      { id: 1, nome: 'Contabilidade' },
+      { id: 2, nome: 'Direito' },
+      { id: 3, nome: 'Financas' },
+      { id: 4, nome: 'Gestao' },
+      { id: 5, nome: 'RH' },
+      { id: 6, nome: 'Marketing' },
+      { id: 7, nome: 'Tecnologia' }
+    ],
+    carregando: false,
+    erro: '',
+
+    etapaAtual: 0,
+    etapasLoading: [
+      { titulo: 'Analisando seu objetivo', icone: '🎯' },
+      { titulo: 'Buscando cursos no catalogo CEFIS', icone: '📚' },
+      { titulo: 'Identificando lacunas de conhecimento', icone: '🔍' },
+      { titulo: 'Montando seu plano personalizado', icone: '✨' }
+    ],
+
+    diagnostico: '',
+    catalogGap: false,
+    plano: [],
+
+    perguntaChat: '',
+    conversas: [],
+    chatDigitando: false,
+
+    async init() {
+      // 1) restaura perfil + passo persistido (sobrevive refresh)
+      try {
+        const saved = localStorage.getItem('cefis_perfil');
+        if (saved) Object.assign(this.perfil, JSON.parse(saved));
+      } catch (e) { /* ignore */ }
+      try {
+        const passoSalvo = parseInt(localStorage.getItem('cefis_passo') || '1', 10);
+        if (passoSalvo >= 1 && passoSalvo <= 3) this.passo = passoSalvo;
+      } catch (e) { /* ignore */ }
+      // 2) persiste qualquer mudanca no perfil + passo dali pra frente
+      this.$watch('perfil', (v) => {
+        try { localStorage.setItem('cefis_perfil', JSON.stringify(v)); } catch (e) {}
+      }, { deep: true });
+      this.$watch('passo', (v) => {
+        try { localStorage.setItem('cefis_passo', String(v)); } catch (e) {}
+      });
+
+      await Promise.all([this.checkStatus(), this.checkMe()]);
+      this.statusTimer = setInterval(() => this.checkStatus(), 5000);
+    },
+
+    // Preenche apenas campos AINDA VAZIOS com dados do usuario CEFIS.
+    // Nunca sobrescreve algo que o aluno ja escreveu/escolheu.
+    aplicarDadosCefis(user, completedIds) {
+      if (!user) return;
+      if (!this.perfil.name && user.first_name) {
+        this.perfil.name = user.first_name;
+      }
+      // mapeia activities (strings da CEFIS) -> ids locais por match de nome
+      const acts = user.activities || [];
+      if (acts.length && this.perfil.areas.length === 0) {
+        const porNome = {};
+        for (const a of this.areas) porNome[a.nome.toLowerCase()] = a.id;
+        for (const act of acts) {
+          const k = (act || '').toLowerCase().trim();
+          // match exato ou parcial (ex.: "Direito Tributario" bate com "Direito")
+          for (const [nome, id] of Object.entries(porNome)) {
+            if (k === nome || k.includes(nome) || nome.includes(k)) {
+              if (!this.perfil.areas.includes(id)) this.perfil.areas.push(id);
+              break;
+            }
+          }
+        }
+      }
+      this.completedCourseIds = completedIds || this.completedCourseIds || [];
+    },
+
+    async checkMe() {
+      try {
+        const r = await fetch('/api/me');
+        const d = await r.json();
+        if (d.logged_in) {
+          this.usuarioCefis = d.user;
+          this.aplicarDadosCefis(d.user, d.completed_course_ids);
+        }
+      } catch (e) { /* silencioso */ }
+    },
+
+    async loginCefis() {
+      this.loginErro = '';
+      this.loginCarregando = true;
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.loginForm)
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'Falha no login');
+        this.usuarioCefis = d.user;
+        this.mostrarLogin = false;
+        this.loginForm = { email: '', password: '' };
+        // re-busca o /me para pegar activities + completed_course_ids
+        await this.checkMe();
+      } catch (e) {
+        this.loginErro = e.message || 'Erro ao entrar';
+      } finally {
+        this.loginCarregando = false;
+      }
+    },
+
+    async logoutCefis() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) { /* ignore */ }
+      this.usuarioCefis = null;
+      this.completedCourseIds = [];
+      // NAO apaga perfil — aluno mantem o que ja preencheu
+    },
+
+    async checkStatus() {
+      try {
+        const r = await fetch('/api/status');
+        this.status = await r.json();
+        if (this.status.ready) {
+          clearInterval(this.statusTimer);
+          if (this.tela === 'indexando') this.tela = 'onboarding';
+        }
+      } catch (e) {
+        console.warn('status falhou', e);
+      }
+    },
+
+    toggleArea(id) {
+      const i = this.perfil.areas.indexOf(id);
+      if (i > -1) this.perfil.areas.splice(i, 1);
+      else this.perfil.areas.push(id);
+    },
+    podeAvancar() {
+      if (this.passo === 1) return this.perfil.name.trim() && this.perfil.areas.length > 0;
+      if (this.passo === 2) return this.perfil.goal.trim().length > 10;
+      if (this.passo === 3) return this.perfil.level;
+      return false;
+    },
+    formatMin(m) {
+      m = Math.round(m || 0);
+      if (m < 60) return m + ' min';
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return r ? `${h}h ${r}min` : `${h}h`;
+    },
+    duracaoTotal() {
+      return this.plano.reduce((s, p) => s + (p.duration_minutes || 0), 0);
+    },
+    concluidos() {
+      return this.plano.filter(p => p.concluido).length;
+    },
+
+    async gerarPlano() {
+      this.carregando = true;
+      this.erro = '';
+      this.tela = 'gerando';
+      // anima etapas independente da resposta real
+      this.etapaAtual = 0;
+      const tick = setInterval(() => {
+        if (this.etapaAtual < this.etapasLoading.length - 1) this.etapaAtual++;
+      }, 2500);
+
+      try {
+        const r = await fetch('/api/onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.perfil)
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ detail: 'erro' }));
+          throw new Error(typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail));
+        }
+        const data = await r.json();
+        this.diagnostico = data.diagnosis || '';
+        this.catalogGap = !!data.catalog_gap;
+        this.plano = (data.plan || []).map(it => ({ ...it, concluido: false }));
+        clearInterval(tick);
+        this.etapaAtual = this.etapasLoading.length;
+        // pequeno delay para o usuario ver as etapas concluidas
+        await new Promise(r => setTimeout(r, 600));
+        this.tela = 'plano';
+        this.conversas = [{
+          tipo: 'tutor',
+          texto: `Oi ${this.perfil.name}! Eu sou seu tutor CEFIS. Posso responder duvidas sobre qualquer aula do plano. Pergunte a vontade.`
+        }];
+      } catch (e) {
+        clearInterval(tick);
+        this.erro = 'Falha ao gerar plano: ' + e.message;
+        this.tela = 'onboarding';
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    reiniciar() {
+      if (!confirm('Reiniciar e voltar ao onboarding?')) return;
+      this.passo = 1;
+      this.plano = [];
+      this.conversas = [];
+      this.diagnostico = '';
+      this.tela = 'onboarding';
+    },
+
+    async enviarPergunta() {
+      const q = this.perguntaChat.trim();
+      if (!q || this.chatDigitando) return;
+      this.conversas.push({ tipo: 'aluno', texto: q });
+      this.perguntaChat = '';
+      this.chatDigitando = true;
+      this.scrollChat();
+
+      const history = this.conversas.filter(c => c.texto).map(c => ({
+        role: c.tipo === 'aluno' ? 'user' : 'assistant',
+        content: c.texto
+      }));
+
+      // SSE via fetch streaming
+      let resp;
+      try {
+        resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: q, history: history.slice(0, -1) })
+        });
+      } catch (e) {
+        this.conversas.push({ tipo: 'tutor', texto: 'Erro de rede: ' + e.message });
+        this.chatDigitando = false;
+        return;
+      }
+
+      if (!resp.ok) {
+        let detail = '';
+        try { detail = JSON.stringify(await resp.json()); } catch (e) { detail = await resp.text().catch(() => ''); }
+        this.conversas.push({ tipo: 'tutor', texto: `Erro ${resp.status}: ${detail.slice(0, 300)}` });
+        this.chatDigitando = false;
+        console.error('[chat]', resp.status, detail);
+        return;
+      }
+      if (!resp.body) {
+        this.conversas.push({ tipo: 'tutor', texto: 'Servidor nao retornou stream.' });
+        this.chatDigitando = false;
+        return;
+      }
+
+      const tutorMsg = { tipo: 'tutor', texto: '', fontes: [] };
+      this.conversas.push(tutorMsg);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buffer.indexOf('\n\n')) > -1) {
+            const raw = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            const ev = parseSSE(raw);
+            if (!ev) continue;
+            if (ev.event === 'sources') {
+              try { tutorMsg.fontes = JSON.parse(ev.data); } catch (e) { console.error('parse sources', e); }
+            } else if (ev.event === 'token') {
+              try {
+                tutorMsg.texto += JSON.parse(ev.data).t || '';
+              } catch (e) { console.error('parse token', e); }
+              this.scrollChat();
+            } else if (ev.event === 'error') {
+              try {
+                const errObj = JSON.parse(ev.data);
+                tutorMsg.texto += `\n\n[erro: ${errObj.message || JSON.stringify(errObj)}]`;
+              } catch (e) {
+                tutorMsg.texto += '\n\n[erro de stream]';
+              }
+              console.error('[chat stream error]', ev.data);
+            }
+          }
+        }
+      } catch (e) {
+        tutorMsg.texto += `\n\n[falha na leitura do stream: ${e.message}]`;
+        console.error('[chat read]', e);
+      }
+      this.chatDigitando = false;
+      this.scrollChat();
+    },
+
+    scrollChat() {
+      this.$nextTick(() => {
+        if (this.$refs.chatBox) {
+          this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight;
+        }
+      });
+    }
+  };
+}
+
+function parseSSE(raw) {
+  const lines = raw.split('\n');
+  const ev = { event: 'message', data: '' };
+  for (const line of lines) {
+    if (line.startsWith('event:')) ev.event = line.slice(6).trim();
+    else if (line.startsWith('data:')) ev.data += line.slice(5).trim();
+  }
+  return ev.data ? ev : null;
+}
+</script>
+
+</body>
+</html>

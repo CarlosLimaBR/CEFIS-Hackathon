@@ -62,7 +62,7 @@
 
 ## Diferenciais para destacar no vídeo (escolher 3)
 
-1. **RAG profundo nas transcrições** — outros times vão usar API/keyword, eu cito o segundo da aula
+1. **RAG profundo nas transcrições** — o chat cita curso, aula e segundo exato onde a informação é dita
 2. **Catálogo 100% local indexado** — zero rate limit, busca semântica instantânea
 3. **Login CEFIS real** — remove cursos já certificados do plano
 4. **Combinação explícita CEFIS + IA** — badges 🎬 / 📝 no plano

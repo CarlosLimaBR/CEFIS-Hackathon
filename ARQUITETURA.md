@@ -134,12 +134,12 @@ Limite conhecido: ruim para multi-instância (sem replicação). Para hackathon 
 - Implementação trivial em FastAPI (`StreamingResponse`)
 - Funciona com fetch + getReader() — sem dependência client
 
-### 5. Por que persistência só em localStorage (sem login obrigatório)?
+### 5. Por que persistência em localStorage (sem login obrigatório)?
 
-- **Friction zero** para começar: aluno chega e usa
-- **Privacidade** por padrão: nenhum dado pessoal trafega
-- **Login CEFIS é opcional**: vira diferencial (puxar progresso real) sem ser pré-requisito
-- localStorage tem ~5MB, suficiente para anos de histórico
+- **Friction zero** para começar: aluno chega e usa imediatamente
+- **Privacidade**: nenhum dado pessoal trafega para o servidor
+- **Login CEFIS é opcional**: puxa progresso real quando o aluno escolhe entrar
+- localStorage tem ~5 MB, suficiente para anos de histórico
 
 ---
 

@@ -326,16 +326,14 @@
           <div class="font-semibold text-sm" x-text="`${concluidos()}/${plano.length} • ${formatMin(duracaoTotal())}`"></div>
         </div>
         <button
-          x-show="todosConcluidos()"
-          @click="proximaFase()"
+          @click="abrirNovaSessao()"
           :disabled="carregando"
           class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition flex items-center gap-1"
-          :title="`Gerar fase ${faseAtual + 1} excluindo o que voce ja viu`"
+          :title="todosConcluidos() ? 'Gerar nova sessao avancada' : 'Gerar nova sessao com o tempo que voce tem agora'"
         >
-          <span x-show="!carregando">Proxima fase ⤴</span>
-          <span x-show="carregando">Gerando...</span>
+          <span>+ Nova sessao</span>
         </button>
-        <button @click="reiniciar()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Reiniciar</button>
+        <button @click="editarPerfil()" class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg">Editar perfil</button>
       </div>
     </div>
   </header>
@@ -461,6 +459,75 @@
           </button>
         </form>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================== MODAL "NOVA SESSAO" ================== -->
+<div x-show="mostrarNovaSessao" @keydown.escape.window="fecharNovaSessao()" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="font-bold text-lg">Nova sessao de estudo</h3>
+      <button @click="fecharNovaSessao()" class="text-slate-400 hover:text-slate-700 text-xl">&times;</button>
+    </div>
+
+    <div class="px-6 py-5 space-y-5">
+      <!-- Tempo -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm font-medium text-slate-700">Quanto tempo voce tem AGORA?</label>
+          <span class="text-amber-600 font-semibold text-sm" x-text="formatMin(novaSessao.minutes)"></span>
+        </div>
+        <input type="range" x-model.number="novaSessao.minutes" min="10" max="240" step="5" class="w-full accent-amber-500">
+        <div class="flex justify-between text-xs text-slate-400 mt-1">
+          <span>10 min</span>
+          <span>1h</span>
+          <span>2h</span>
+          <span>4h</span>
+        </div>
+      </div>
+
+      <!-- O que estudar -->
+      <div>
+        <label class="text-sm font-medium text-slate-700 block mb-2">O que voce quer estudar agora?</label>
+        <div class="space-y-2">
+          <label class="flex items-start gap-2 cursor-pointer p-3 rounded-lg border-2 transition" :class="novaSessao.modo === 'continuar' ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:border-amber-300'">
+            <input type="radio" name="modo-sessao" value="continuar" x-model="novaSessao.modo" class="mt-1 accent-amber-500">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold">🔄 Continuar com o mesmo objetivo</div>
+              <div class="text-xs text-slate-600 mt-0.5 italic line-clamp-2" x-text="`&quot;${novaSessao.goalAtual}&quot;`"></div>
+              <button x-show="novaSessao.modo === 'continuar' && !novaSessao.editandoObjetivo" @click.prevent="novaSessao.editandoObjetivo = true; novaSessao.goalNovo = novaSessao.goalAtual" class="text-xs text-blue-600 hover:underline mt-1">Editar objetivo</button>
+              <textarea x-show="novaSessao.modo === 'continuar' && novaSessao.editandoObjetivo" x-model="novaSessao.goalNovo" rows="2" class="mt-2 w-full text-xs rounded border-slate-300 p-2 border focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"></textarea>
+            </div>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer p-3 rounded-lg border-2 transition" :class="novaSessao.modo === 'trocar' ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:border-amber-300'">
+            <input type="radio" name="modo-sessao" value="trocar" x-model="novaSessao.modo" class="mt-1 accent-amber-500">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold">🆕 Estudar outro tema/curso</div>
+              <div class="text-xs text-slate-600 mt-0.5">Voce digita um novo objetivo e escolhe novos cursos.</div>
+              <textarea x-show="novaSessao.modo === 'trocar'" x-model="novaSessao.goalNovo" rows="2" placeholder="Ex.: Quero entender IFRS 16 em 20 minutos." class="mt-2 w-full text-xs rounded border-slate-300 p-2 border focus:border-amber-500 focus:ring focus:ring-amber-200 focus:ring-opacity-50"></textarea>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Info do historico -->
+      <div x-show="historico.lessons_concluidas?.length" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">
+        💡 Vou pular as <strong x-text="historico.lessons_concluidas.length"></strong> aulas que voce ja viu antes.
+      </div>
+    </div>
+
+    <div class="px-6 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50 rounded-b-2xl">
+      <button @click="fecharNovaSessao()" class="text-sm text-slate-500 hover:text-slate-700">Cancelar</button>
+      <button
+        @click="aplicarNovaSessao()"
+        :disabled="carregando || (novaSessao.modo === 'trocar' && novaSessao.goalNovo.trim().length < 10)"
+        :class="(!carregando && !(novaSessao.modo === 'trocar' && novaSessao.goalNovo.trim().length < 10)) ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-200 text-slate-400'"
+        class="px-5 py-2 rounded-lg font-medium text-sm transition"
+      >
+        <span x-show="!carregando">Gerar sessao &#10024;</span>
+        <span x-show="carregando">Gerando...</span>
+      </button>
     </div>
   </div>
 </div>
@@ -675,6 +742,16 @@ function app() {
     trilhasCefis: [],
     mostrarTrilhas: false,
     carregandoTrilhas: false,
+
+    // Nova sessao recorrente
+    mostrarNovaSessao: false,
+    novaSessao: {
+      minutes: 30,
+      modo: 'continuar',        // 'continuar' (mesmo objetivo) | 'trocar'
+      editandoObjetivo: false,
+      goalAtual: '',
+      goalNovo: '',
+    },
 
     // Historico cumulativo (cresce a cada sessao)
     historico: {
@@ -1008,18 +1085,71 @@ function app() {
       await this.gerarPlano(true);
     },
 
+    // Volta ao wizard preservando tudo o que foi preenchido (nome, areas,
+    // objetivo, nivel, tempo). Permite o aluno navegar pra frente/tras nos
+    // passos e gerar um plano novo.
+    editarPerfil() {
+      this.tela = 'onboarding';
+      // mantem o passo onde estava na ultima vez (persistido em localStorage)
+      // ou volta pro 3 se o aluno ja completou alguma sessao
+      if (this.plano.length > 0 && this.passo === 1) this.passo = 3;
+    },
+
+    // Modo "Reiniciar tudo" — historico opcional via limparHistorico()
     reiniciar() {
       const msg = (this.historico.lessons_concluidas?.length || this.historico.quizzes?.length)
-        ? 'Reiniciar plano e voltar ao onboarding?\n\n(O historico de aulas vistas e quizzes feitos sera mantido — clique em Cancelar e use "Limpar historico" se quiser zerar tudo.)'
-        : 'Reiniciar e voltar ao onboarding?';
+        ? 'Limpar plano atual e voltar ao onboarding?\n\n(O historico de aulas vistas e quizzes feitos sera mantido — use "Limpar historico" se quiser zerar tudo.)'
+        : 'Limpar plano atual e voltar ao onboarding?';
       if (!confirm(msg)) return;
-      this.passo = 1;
       this.plano = [];
       this.conversas = [];
       this.diagnostico = '';
       this.cursosSelecionados = [];
       this.faseAtual = 1;
+      this.passo = 1;
       this.tela = 'onboarding';
+    },
+
+    // ============== NOVA SESSAO (recorrente) ==============
+    abrirNovaSessao() {
+      this.novaSessao.minutes = Math.min(this.perfil.minutes || 30, 60);
+      this.novaSessao.modo = 'continuar';
+      this.novaSessao.editandoObjetivo = false;
+      this.novaSessao.goalAtual = this.perfil.goal || '';
+      this.novaSessao.goalNovo = '';
+      this.mostrarNovaSessao = true;
+    },
+
+    async aplicarNovaSessao() {
+      const ns = this.novaSessao;
+      // Aplica novo tempo
+      this.perfil.minutes = ns.minutes;
+
+      if (ns.modo === 'continuar') {
+        // mesmo objetivo (com edicao opcional) + avancar fase
+        if (ns.editandoObjetivo && ns.goalNovo.trim().length > 10) {
+          this.perfil.goal = ns.goalNovo.trim();
+        }
+        this.mostrarNovaSessao = false;
+        // gera fase N+1 sem mostrar selecao de cursos (mantem cursos do plano atual + exclui visto)
+        await this.gerarPlano(true);
+      } else {
+        // trocar de tema -> volta pra selecao de cursos com novo objetivo
+        if (ns.goalNovo.trim().length > 10) {
+          this.perfil.goal = ns.goalNovo.trim();
+        }
+        this.mostrarNovaSessao = false;
+        // limpa selecao e plano atual, busca novos cursos candidatos
+        this.cursosSelecionados = [];
+        this.plano = [];
+        this.diagnostico = '';
+        this.faseAtual = 1; // nova trilha
+        await this.abrirSelecaoCursos();
+      }
+    },
+
+    fecharNovaSessao() {
+      this.mostrarNovaSessao = false;
     },
 
     limparHistorico() {

@@ -26,6 +26,16 @@ Onboarding em 3 passos, mensagem contextual do tutor com áudio automático, pla
 
 ## O que foi entregue
 
+### ⏱️ Conteúdo adaptado à disponibilidade do aluno
+
+O tempo declarado pelo aluno é levado a sério pelo plano gerado. No onboarding e a cada nova sessão (botão **+ Nova sessão**), o aluno define quantos minutos tem agora. O prompt do plano respeita a duração total com tolerância de +10%, e a composição muda conforme o tempo disponível:
+
+- **10–20 min** → 1 aula curta + resumo aplicado da IA
+- **30–45 min** → 2-3 aulas + resumo + quiz
+- **1 h ou mais** → trilha mais densa, com chat e roleplay possíveis
+
+O histórico cumulativo pula automaticamente as aulas e cursos já vistos em sessões anteriores. O resultado é uma sessão que cabe na realidade do aluno — 15 minutos no ônibus, 30 minutos no almoço ou uma hora no fim de semana.
+
 ### 🎭 Aprendizado ativo (Roleplay)
 
 **"Pratique com o tutor"**. O aluno escolhe um cenário real (apresentar PDCA para o CFO cético, defender planejamento tributário em auditoria, negociar prazo com cliente exigente, explicar IFRS 16 em treinamento interno). A IA interpreta o personagem com tom realista e faz perguntas. Após algumas trocas, o aluno recebe feedback estruturado com nota 0-10, pontos fortes, pontos a melhorar e 3 aulas reais do catálogo CEFIS linkadas para aprofundar. Funciona inteiramente por voz.

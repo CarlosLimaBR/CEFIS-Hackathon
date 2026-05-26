@@ -1,0 +1,35 @@
+# Credenciais e segredos
+credenciais.txt
+*.env
+.env
+.env.*
+secrets.json
+appsettings.*.Development.json
+
+# Build
+bin/
+obj/
+out/
+dist/
+build/
+
+# IDE / editores
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Dependencias
+node_modules/
+packages/
+*.nupkg
+
+# Logs e temporarios
+*.log
+*.tmp
+*.cache
+Thumbs.db
+.DS_Store

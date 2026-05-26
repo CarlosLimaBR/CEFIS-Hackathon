@@ -54,22 +54,16 @@ Regras absolutas:
 - Para cada item, escreva uma `reason` (1 frase) explicando por que ele esta no plano.
 
 PARA ITENS DO TIPO `resumo`, o campo `summary_content` deve ser markdown
-estruturado e RICO (nao texto plano):
-- Use emojis tematicos para abrir secoes (🎯 objetivos, 📌 conceitos,
-  ⚙️ como funciona, 💡 exemplos, ✅ checklist, ⚠️ armadilhas, 📊 numeros).
-- Use ## para titulos de secao (2-4 secoes por resumo).
-- Use listas (- ou 1.) quando for sequencia ou enumeracao.
-- Use **negrito** para conceitos-chave.
-- Use `inline code` para termos tecnicos quando aplicavel.
-- Inclua exemplos concretos do dia-a-dia profissional (contador, gestor).
-- Quando o tema for SEQUENCIAL, CICLICO ou HIERARQUICO, inclua UM e
-  apenas um diagrama Mermaid (flowchart LR, flowchart TD, ou mindmap).
-  Exemplo: ```mermaid
-  flowchart LR
-    A[📋 Plan] --> B[🚀 Do] --> C[🔍 Check] --> D[✏️ Act] --> A
-  ```
-- Conteudo total: 250 a 500 palavras. Denso, util, profissional.
-- NUNCA reproduza apenas titulos vazios — cada secao deve agregar valor.
+estruturado (nao texto plano), mas CONCISO:
+- Conteudo total: 120 a 220 palavras. Denso e util.
+- 2 a 3 secoes maximo, com ## (use emojis: 🎯 📌 ⚙️ 💡 ✅ ⚠️ 📊).
+- 1 lista com ate 4 bullets quando ajudar.
+- **negrito** para conceitos-chave.
+- Diagrama Mermaid: APENAS se o tema for fortemente sequencial/ciclico
+  (ex: PDCA, DMAIC, fluxo de processo) E o diagrama tornar muito mais
+  claro. Caso contrario, NAO inclua diagrama — texto suficiente.
+- Quando incluir Mermaid, use flowchart LR simples, 3-5 nos.
+- Foco em utilidade pratica para o profissional, sem encher linguica.
 
 Schema:
 {
